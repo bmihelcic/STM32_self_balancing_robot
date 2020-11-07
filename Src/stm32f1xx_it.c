@@ -44,6 +44,8 @@
 #define COMMAND_LOWER_P10        (0x38)
 #define COMMAND_LOWER_D10        (0x39)
 #define COMMAND_ENABLE_MOTORS    (0x0E)
+#define COMMAND_SET_POINT_PLUS   (0x51)
+#define COMMAND_SET_POINT_MINUS  (0x52)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -57,6 +59,7 @@ extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
 extern volatile uint8_t loop_flag;
 extern volatile uint8_t enable_motors_flag;
+extern volatile float SET_POINT;
 extern volatile float Kp;
 extern volatile float Ki;
 extern volatile float Kd;
@@ -254,6 +257,12 @@ void USART1_IRQHandler(void) {
     case COMMAND_LOWER_D10:
         Kd -= 10.0f;
         break;
+    case COMMAND_SET_POINT_PLUS:
+        SET_POINT += 0.1f;
+        break;
+    case COMMAND_SET_POINT_MINUS:
+        SET_POINT -= 0.1f;
+        break;
     case COMMAND_ENABLE_MOTORS:
         if (FALSE == enable_motors_flag) {
             enable_motors_flag = TRUE;
@@ -264,6 +273,7 @@ void USART1_IRQHandler(void) {
         }
         break;
     default:
+        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         break;
     }
     received_command = COMMAND_CLEAR;

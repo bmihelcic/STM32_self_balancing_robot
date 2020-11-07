@@ -32,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SET_POINT       (94.1f)
+volatile float SET_POINT = 85.5f;
 #define SP_DEVIATION    (0.0f)
 /* USER CODE END PD */
 
@@ -83,8 +83,8 @@ int main(void) {
     int16_t accel_x = 0;
     int16_t accel_z = 0;
     int16_t gyro_y = 0;
-    int32_t gyro_calib_y = 0;
-    int32_t gyro_calib_z = 0;
+    int32_t gyro_offset_x = 0;
+    int32_t gyro_offset_y = 0;
     uint8_t robot_crashed_flag = TRUE;
     uint8_t send_data_flag = FALSE;
 
@@ -139,12 +139,12 @@ int main(void) {
         if (i % 10 == 0) {
             HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         }
-        gyro_calib_y += MPU6050_getGyro_Y(&hi2c1);
-        gyro_calib_z += MPU6050_getGyro_Z(&hi2c1);
+        gyro_offset_x += MPU6050_getGyro_X(&hi2c1);
+        gyro_offset_y += MPU6050_getGyro_Y(&hi2c1);
         HAL_Delay(4);
     }
-    gyro_calib_y /= 500;
-    gyro_calib_z /= 500 + 20;
+    gyro_offset_x /= 500;
+    gyro_offset_y /= 500;
 
     HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
     HAL_TIM_Base_Start_IT(&htim2);
@@ -164,9 +164,11 @@ int main(void) {
             time_delta = time_stamp - time_stamp_prev;
             accel_x = MPU6050_getAccel_X(&hi2c1);
             accel_z = MPU6050_getAccel_Z(&hi2c1);
-            gyro_y = MPU6050_getGyro_Y(&hi2c1) - gyro_calib_y;
-            //gyro_z = MPU6050_getGyro_Z(&hi2c1) - gyro_calib_z;
-            accel_angle = (atan2((double) accel_z, (double) accel_x) + M_PI) * (180.0f / M_PI) - 175.0f;
+
+            gyro_y = MPU6050_getGyro_Y(&hi2c1) - gyro_offset_y;
+
+            accel_angle = (atan2((double) accel_x, -(double) accel_z) * (180.0f / M_PI));
+
             if ((TRUE == robot_crashed_flag) && (accel_angle > 70.0f) && (accel_angle < 120.0f)) {
                 robot_crashed_flag = FALSE;
                 gyro_angle = accel_angle;
