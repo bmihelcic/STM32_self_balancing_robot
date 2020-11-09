@@ -176,12 +176,16 @@ int main(void) {
             gyro_angle += ((float) gyro_y / 32750.0f);
             gyro_angle = gyro_angle * 0.996f + accel_angle * 0.004f;
             if ((gyro_angle < 65.0f) || (gyro_angle > 125.0f)) {
-                robot_crashed_flag = TRUE;
-                enable_motors_flag = FALSE;
-                HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-                pid_total = 0.0f;
+                if(TRUE != robot_crashed_flag) {
+                    robot_crashed_flag = TRUE;
+                    enable_motors_flag = FALSE;
+                    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+                    pid_total = 0.0f;
+                }
             } else {
-                robot_crashed_flag = FALSE;
+                if(FALSE != robot_crashed_flag) {
+                    robot_crashed_flag = FALSE;
+                }
             }
 
             if (TRUE != robot_crashed_flag) {
