@@ -1,9 +1,21 @@
-/*
- * my_functions.h
- *
- *  Created on: Oct 17, 2019
- *      Author: branimir
- */
+/**
+  ******************************************************************************
+  * File Name          : my_functions.h
+  * Description        : Self balancing robot specific functions, e.g. motor control
+  *                      MPU6050 functions, etc.
+  ******************************************************************************
+  * @attention
+  *
+  * <h2><center>&copy; Copyright (c) 2020 Branimir Mihelčić
+  * All rights reserved.</center></h2>
+  *
+  * This software component is licensed under BSD 3-Clause license,
+  * the "License"; You may not use this file except in compliance with the
+  * License. You may obtain a copy of the License at:
+  *                        opensource.org/licenses/BSD-3-Clause
+  *
+  ******************************************************************************
+  */
 
 #ifndef MY_FUNCTIONS_H_
 #define MY_FUNCTIONS_H_
