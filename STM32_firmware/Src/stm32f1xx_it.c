@@ -63,6 +63,8 @@ extern volatile float SET_POINT;
 extern volatile float Kp;
 extern volatile float Ki;
 extern volatile float Kd;
+extern volatile uint8_t send_important_data;
+extern volatile uint8_t send_non_important_data;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -190,11 +192,15 @@ void PendSV_Handler(void) {
  */
 void SysTick_Handler(void) {
     /* USER CODE BEGIN SysTick_IRQn 0 */
-
     /* USER CODE END SysTick_IRQn 0 */
     HAL_IncTick();
     /* USER CODE BEGIN SysTick_IRQn 1 */
-
+    if(uwTick % IMPORTANT_DATA_FREQ == 0) {
+        send_important_data = TRUE;
+    }
+    if(uwTick % NON_IMPORTANT_DATA_FREQ == 0) {
+        send_non_important_data = TRUE;
+    }
     /* USER CODE END SysTick_IRQn 1 */
 }
 
@@ -223,8 +229,8 @@ void TIM2_IRQHandler(void) {
  * @brief This function handles USART1 global interrupt.
  */
 void USART1_IRQHandler(void) {
-    static volatile uint32_t received_command = 0;
     /* USER CODE BEGIN USART1_IRQn 0 */
+    static volatile uint32_t received_command = 0;
     received_command = (USART1->DR & 0xFF);
     switch (received_command) {
     case COMMAND_RAISE_P:

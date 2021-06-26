@@ -19,10 +19,9 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "string.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include "string.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -33,7 +32,6 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 volatile float SET_POINT = 85.5f;
-#define SP_DEVIATION    (0.0f)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -68,10 +66,12 @@ static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN 0 */
 volatile uint8_t loop_flag = FALSE;
 volatile uint8_t enable_motors_flag = FALSE;
+volatile uint8_t send_important_data = FALSE;
+volatile uint8_t send_non_important_data = FALSE;
 volatile float Kp = 430.0f;
 volatile float Ki = 6.5f;
 volatile float Kd = 100.0f;
-uint8_t UART_tx_buffer[100] = { 0 };
+uint8_t UART_tx_buffer[2][100] = { 0 };
 /* USER CODE END 0 */
 
 /**
@@ -86,7 +86,6 @@ int main(void) {
     int32_t gyro_offset_x = 0;
     int32_t gyro_offset_y = 0;
     uint8_t robot_crashed_flag = TRUE;
-    uint8_t send_data_flag = FALSE;
 
     /* PID controller variables */
     float pid_error = 0.0f;
@@ -234,17 +233,22 @@ int main(void) {
                 resetMotors(&htim3);
             }
 
-            sprintf((char*) UART_tx_buffer, "%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t|\t%.2f\t%.2f\t%.2f\t%d\r\n",
-                    gyro_angle, pid_error, pid_p, pid_i, pid_d, Kp, Ki, Kd, enable_motors_flag);
-            send_data_flag = TRUE;
-
             pid_error_prev = pid_error;
             time_stamp_prev = time_stamp;
             loop_flag = FALSE;
+
         } else {
-            if (TRUE == send_data_flag) {
-                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer, strlen((char*) UART_tx_buffer), 100);
-                send_data_flag = FALSE;
+            if (TRUE == send_important_data) {
+                send_important_data = FALSE;
+                sprintf((char*) UART_tx_buffer[IMPORTANT_DATA], "!%.1f\t%.1f\0",
+                        gyro_angle, pid_error);
+                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[IMPORTANT_DATA], strlen((char*) UART_tx_buffer[IMPORTANT_DATA]), 100);
+            }
+            if (TRUE == send_non_important_data) {
+                send_non_important_data = FALSE;
+                sprintf((char*) UART_tx_buffer[NON_IMPORTANT_DATA], "\t%.1f\t%.1f\t%.1f\t%d\0",
+                        Kp, Ki, Kd, enable_motors_flag);
+                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[NON_IMPORTANT_DATA], strlen((char*) UART_tx_buffer[NON_IMPORTANT_DATA]), 100);
             }
         }
         /* USER CODE END 3 */

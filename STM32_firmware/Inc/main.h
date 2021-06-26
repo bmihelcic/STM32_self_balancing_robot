@@ -37,6 +37,7 @@ extern "C" {
 #include <stdio.h>
 #include <math.h>
 #include <stdlib.h>
+#include "conf.h"
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -79,7 +80,8 @@ void Error_Handler(void);
 #define IN4_Pin GPIO_PIN_15
 #define IN4_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
-
+#define IMPORTANT_DATA      (0u)
+#define NON_IMPORTANT_DATA  (1u)
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
