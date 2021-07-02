@@ -21,7 +21,14 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "string.h"
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include "conf.h"
+#include "motors.h"
+#include "MPU6050.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -64,13 +71,14 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile uint8_t loop_flag = FALSE;
-volatile uint8_t enable_motors_flag = FALSE;
+volatile uint8_t robot_shutdown = FALSE;
+volatile uint8_t process_pid = FALSE;
+volatile uint8_t enable_motors = FALSE;
 volatile uint8_t send_important_data = FALSE;
 volatile uint8_t send_non_important_data = FALSE;
-volatile float Kp = 430.0f;
-volatile float Ki = 6.5f;
-volatile float Kd = 100.0f;
+volatile float Kp = 100.0f;
+volatile float Ki = 50.0f;
+volatile float Kd = 70.0f;
 uint8_t UART_tx_buffer[2][100] = { 0 };
 /* USER CODE END 0 */
 
@@ -85,7 +93,7 @@ int main(void) {
     int16_t gyro_y = 0;
     int32_t gyro_offset_x = 0;
     int32_t gyro_offset_y = 0;
-    uint8_t robot_crashed_flag = TRUE;
+    uint8_t robot_crashed = TRUE;
 
     /* PID controller variables */
     float pid_error = 0.0f;
@@ -101,6 +109,13 @@ int main(void) {
 
     float accel_angle = 0.0f;
     float gyro_angle = 0.0f;
+
+    FLASH_EraseInitTypeDef flashEraseInitStruct = {
+            .TypeErase = FLASH_TYPEERASE_PAGES,
+            .PageAddress = NV_MEMORY_ADDRESS,
+            .NbPages = 1,
+    };
+    uint32_t pageErr = 0;
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -153,12 +168,12 @@ int main(void) {
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (1) {
+    while (FALSE == robot_shutdown) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
         // true every 4ms, set by TIM2
-        if (TRUE == loop_flag) {
+        if (TRUE == process_pid) {
             time_stamp = HAL_GetTick();
             time_delta = time_stamp - time_stamp_prev;
             accel_x = MPU6050_getAccel_X(&hi2c1);
@@ -168,26 +183,26 @@ int main(void) {
 
             accel_angle = (atan2((double) accel_x, -(double) accel_z) * (180.0f / M_PI));
 
-            if ((TRUE == robot_crashed_flag) && (accel_angle > 70.0f) && (accel_angle < 120.0f)) {
-                robot_crashed_flag = FALSE;
+            if ((TRUE == robot_crashed) && (accel_angle > 70.0f) && (accel_angle < 120.0f)) {
+                robot_crashed = FALSE;
                 gyro_angle = accel_angle;
             }
             gyro_angle += ((float) gyro_y / 32750.0f);
             gyro_angle = gyro_angle * 0.996f + accel_angle * 0.004f;
             if ((gyro_angle < 65.0f) || (gyro_angle > 125.0f)) {
-                if(TRUE != robot_crashed_flag) {
-                    robot_crashed_flag = TRUE;
-                    enable_motors_flag = FALSE;
+                if(TRUE != robot_crashed) {
+                    robot_crashed = TRUE;
+                    enable_motors = FALSE;
                     HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
                     pid_total = 0.0f;
                 }
             } else {
-                if(FALSE != robot_crashed_flag) {
-                    robot_crashed_flag = FALSE;
+                if(FALSE != robot_crashed) {
+                    robot_crashed = FALSE;
                 }
             }
 
-            if (TRUE != robot_crashed_flag) {
+            if (TRUE != robot_crashed) {
                 pid_error = SET_POINT - gyro_angle;
                 /* calculate p of pid */
                 pid_p = Kp * pid_error;
@@ -222,20 +237,20 @@ int main(void) {
                 if (pid_total < 0.0f) {
                     pid_total = -pid_total;
                 }
-                if ((gyro_angle > (SET_POINT + SP_DEVIATION)) && (TRUE == enable_motors_flag)) {
-                    turnMotorsClockwise(&htim3, pid_total);
-                } else if ((gyro_angle < (SET_POINT - SP_DEVIATION)) && (TRUE == enable_motors_flag)) {
-                    turnMotorsCounterClockwise(&htim3, pid_total);
+                if ((gyro_angle > (SET_POINT + SP_DEVIATION)) && (TRUE == enable_motors)) {
+                    MOTORS_turnClockwise(&htim3, pid_total);
+                } else if ((gyro_angle < (SET_POINT - SP_DEVIATION)) && (TRUE == enable_motors)) {
+                    MOTORS_turnCounterClockwise(&htim3, pid_total);
                 } else {
-                    resetMotors(&htim3);
+                    MOTORS_powerOff(&htim3);
                 }
             } else {
-                resetMotors(&htim3);
+                MOTORS_powerOff(&htim3);
             }
 
             pid_error_prev = pid_error;
             time_stamp_prev = time_stamp;
-            loop_flag = FALSE;
+            process_pid = FALSE;
 
         } else {
             if (TRUE == send_important_data) {
@@ -247,10 +262,12 @@ int main(void) {
             if (TRUE == send_non_important_data) {
                 send_non_important_data = FALSE;
                 sprintf((char*) UART_tx_buffer[NON_IMPORTANT_DATA], "\t%.1f\t%.1f\t%.1f\t%d\0",
-                        Kp, Ki, Kd, enable_motors_flag);
+                        Kp, Ki, Kd, enable_motors);
                 HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[NON_IMPORTANT_DATA], strlen((char*) UART_tx_buffer[NON_IMPORTANT_DATA]), 100);
             }
         }
+//        HAL_FLASHEx_Erase(&flashEraseInitStruct, &pageErr);
+//        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, NV_MEMORY_ADDRESS, 0xABCD);
         /* USER CODE END 3 */
     }
 }

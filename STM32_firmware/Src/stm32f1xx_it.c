@@ -23,6 +23,7 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "conf.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,20 +33,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define COMMAND_CLEAR            (0x00)
-#define COMMAND_RAISE_P          (0x30)
-#define COMMAND_RAISE_I          (0x31)
-#define COMMAND_RAISE_D          (0x32)
-#define COMMAND_RAISE_P10        (0x33)
-#define COMMAND_RAISE_D10        (0x34)
-#define COMMAND_LOWER_P          (0x35)
-#define COMMAND_LOWER_I          (0x36)
-#define COMMAND_LOWER_D          (0x37)
-#define COMMAND_LOWER_P10        (0x38)
-#define COMMAND_LOWER_D10        (0x39)
-#define COMMAND_ENABLE_MOTORS    (0x0E)
-#define COMMAND_SET_POINT_PLUS   (0x51)
-#define COMMAND_SET_POINT_MINUS  (0x52)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -57,14 +44,15 @@
 /* USER CODE BEGIN PV */
 extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
-extern volatile uint8_t loop_flag;
-extern volatile uint8_t enable_motors_flag;
+extern volatile uint8_t process_pid;
+extern volatile uint8_t enable_motors;
 extern volatile float SET_POINT;
 extern volatile float Kp;
 extern volatile float Ki;
 extern volatile float Kd;
 extern volatile uint8_t send_important_data;
 extern volatile uint8_t send_non_important_data;
+extern volatile uint8_t robot_shutdown;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -216,7 +204,7 @@ void SysTick_Handler(void) {
  */
 void TIM2_IRQHandler(void) {
     /* USER CODE BEGIN TIM2_IRQn 0 */
-    loop_flag = 1;
+    process_pid = 1;
 
     /* USER CODE END TIM2_IRQn 0 */
     HAL_TIM_IRQHandler(&htim2);
@@ -233,6 +221,9 @@ void USART1_IRQHandler(void) {
     static volatile uint32_t received_command = 0;
     received_command = (USART1->DR & 0xFF);
     switch (received_command) {
+    case COMMAND_SHUTDOWN:
+        robot_shutdown = TRUE;
+        break;
     case COMMAND_RAISE_P:
         Kp++;
         break;
@@ -270,11 +261,11 @@ void USART1_IRQHandler(void) {
         SET_POINT -= 0.1f;
         break;
     case COMMAND_ENABLE_MOTORS:
-        if (FALSE == enable_motors_flag) {
-            enable_motors_flag = TRUE;
+        if (FALSE == enable_motors) {
+            enable_motors = TRUE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
         } else {
-            enable_motors_flag = FALSE;
+            enable_motors = FALSE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
         }
         break;

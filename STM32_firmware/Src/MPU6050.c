@@ -1,8 +1,7 @@
 /**
   ******************************************************************************
-  * File Name          : my_functions.c
-  * Description        : Self balancing robot specific functions, e.g. motor control
-  *                      MPU6050 functions, etc.
+  * File Name          : MPU6050.c
+  * Description        : Self balancing robot motor control functions
   ******************************************************************************
   * @attention
   *
@@ -16,53 +15,7 @@
   *
   ******************************************************************************
   */
-
-#include "stm32f1xx_hal.h"
-#include "main.h"
-#include "my_functions.h"
-
-/*
- * @brief Function to turn wheels clockwise utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- * @param v: speed, pwm duty cycle
- *              <0, timer period>
- */
-void turnMotorsClockwise(TIM_HandleTypeDef *htim, uint16_t v) {
-    HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_SET);
-    htim->Instance->CCR1 = v;
-    htim->Instance->CCR2 = v;
-}
-
-/*
- * @brief Function to turn wheels counter clockwise utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- * @param v: speed/pwm duty cycle
- *              <0, timer period>
- */
-void turnMotorsCounterClockwise(TIM_HandleTypeDef *htim, uint16_t v) {
-    HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_SET);
-    HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_RESET);
-    htim->Instance->CCR1 = v;
-    htim->Instance->CCR2 = v;
-}
-
-/*
- * @brief Function to turn off wheels utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- */
-void resetMotors(TIM_HandleTypeDef *htim) {
-    HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_RESET);
-    HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_RESET);
-    htim->Instance->CCR1 = 0;
-    htim->Instance->CCR2 = 0;
-}
+#include "MPU6050.h"
 
 /*
  * @brief Sets value to MPU6050 register

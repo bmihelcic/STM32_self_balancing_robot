@@ -22,7 +22,7 @@ TARGET = STM32_self_balancing_robot
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -Og
+OPT = -O0
 
 
 #######################################
@@ -39,7 +39,6 @@ C_SOURCES =  \
 Src/main.c \
 Src/stm32f1xx_it.c \
 Src/stm32f1xx_hal_msp.c \
-Src/my_functions.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
@@ -55,7 +54,9 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
-Src/system_stm32f1xx.c
+Src/system_stm32f1xx.c \
+Src/MPU6050.c \
+Src/motors.c
 
 # ASM sources
 ASM_SOURCES =  \
