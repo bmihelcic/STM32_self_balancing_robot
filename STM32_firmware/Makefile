@@ -56,7 +56,8 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
 Src/system_stm32f1xx.c \
 Src/MPU6050.c \
-Src/motors.c
+Src/motors.c \
+Src/pid_control.c
 
 # ASM sources
 ASM_SOURCES =  \

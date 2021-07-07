@@ -22,13 +22,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
-#include <math.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
 #include "conf.h"
-#include "motors.h"
-#include "MPU6050.h"
+#include "self_balancing_robot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -38,7 +36,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-volatile float SET_POINT = 85.5f;
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -71,14 +69,8 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile uint8_t robot_shutdown = FALSE;
-volatile uint8_t process_pid = FALSE;
-volatile uint8_t enable_motors = FALSE;
-volatile uint8_t send_important_data = FALSE;
-volatile uint8_t send_non_important_data = FALSE;
-volatile float Kp = 100.0f;
-volatile float Ki = 50.0f;
-volatile float Kd = 70.0f;
+selfBalancingRobot_S selfBalancingRobot;
+
 uint8_t UART_tx_buffer[2][100] = { 0 };
 /* USER CODE END 0 */
 
@@ -88,34 +80,7 @@ uint8_t UART_tx_buffer[2][100] = { 0 };
  */
 int main(void) {
     /* USER CODE BEGIN 1 */
-    int16_t accel_x = 0;
-    int16_t accel_z = 0;
-    int16_t gyro_y = 0;
-    int32_t gyro_offset_x = 0;
-    int32_t gyro_offset_y = 0;
-    uint8_t robot_crashed = TRUE;
 
-    /* PID controller variables */
-    float pid_error = 0.0f;
-    float pid_error_prev = 0.0f;
-    float pid_p = 0.0f;
-    float pid_i = 0.0f;
-    float pid_d = 0.0f;
-    float pid_total = 0.0f;
-
-    uint32_t time_stamp = 0u;
-    uint32_t time_stamp_prev = 0u;
-    uint32_t time_delta = 0u;
-
-    float accel_angle = 0.0f;
-    float gyro_angle = 0.0f;
-
-    FLASH_EraseInitTypeDef flashEraseInitStruct = {
-            .TypeErase = FLASH_TYPEERASE_PAGES,
-            .PageAddress = NV_MEMORY_ADDRESS,
-            .NbPages = 1,
-    };
-    uint32_t pageErr = 0;
     /* USER CODE END 1 */
 
     /* MCU Configuration--------------------------------------------------------*/
@@ -124,7 +89,8 @@ int main(void) {
     HAL_Init();
 
     /* USER CODE BEGIN Init */
-
+    selfBalancingRobot.req_robot_angle = INITIAL_UPRIGHT_ROBOT_ANGLE;
+    MOTORS_init(&selfBalancingRobot.motorsHandle, &htim3);
     /* USER CODE END Init */
 
     /* Configure the system clock */
@@ -142,23 +108,11 @@ int main(void) {
     MX_USART1_UART_Init();
     /* USER CODE BEGIN 2 */
     HAL_Delay(2500);
-    MPU6050_setReg(&hi2c1, PWR_MGMT_1, 0x00);
-    MPU6050_setReg(&hi2c1, GYRO_CONFIG, 0x00);
-    MPU6050_setReg(&hi2c1, ACCEL_CONFIG, 0x08);
-    MPU6050_setReg(&hi2c1, CONFIG, 0x03);
+
+    MPU6050_init(&selfBalancingRobot.mpu6050Handle, &hi2c1);
+
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
     HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
-    for (size_t i = 0; i < 500; i++) {
-        if (i % 10 == 0) {
-            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        }
-        gyro_offset_x += MPU6050_getGyro_X(&hi2c1);
-        gyro_offset_y += MPU6050_getGyro_Y(&hi2c1);
-        HAL_Delay(4);
-    }
-    gyro_offset_x /= 500;
-    gyro_offset_y /= 500;
 
     HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
     HAL_TIM_Base_Start_IT(&htim2);
@@ -168,106 +122,48 @@ int main(void) {
 
     /* Infinite loop */
     /* USER CODE BEGIN WHILE */
-    while (FALSE == robot_shutdown) {
+    while (FALSE == selfBalancingRobot.robot_shutdown) {
         /* USER CODE END WHILE */
 
         /* USER CODE BEGIN 3 */
-        // true every 4ms, set by TIM2
-        if (TRUE == process_pid) {
-            time_stamp = HAL_GetTick();
-            time_delta = time_stamp - time_stamp_prev;
-            accel_x = MPU6050_getAccel_X(&hi2c1);
-            accel_z = MPU6050_getAccel_Z(&hi2c1);
+        if (TRUE == selfBalancingRobot.update_pid) {
+            MPU6050_Handler(&selfBalancingRobot.mpu6050Handle);
 
-            gyro_y = MPU6050_getGyro_Y(&hi2c1) - gyro_offset_y;
+            selfBalancingRobot.robot_angle = selfBalancingRobot.mpu6050Handle.gyro_angle;
+            selfBalancingRobot.robot_crashed = selfBalancingRobot.mpu6050Handle.isAngleCritical;
 
-            accel_angle = (atan2((double) accel_x, -(double) accel_z) * (180.0f / M_PI));
+            PID_controlHandler(&selfBalancingRobot.pidHandle, selfBalancingRobot.req_robot_angle, selfBalancingRobot.robot_angle);
 
-            if ((TRUE == robot_crashed) && (accel_angle > 70.0f) && (accel_angle < 120.0f)) {
-                robot_crashed = FALSE;
-                gyro_angle = accel_angle;
-            }
-            gyro_angle += ((float) gyro_y / 32750.0f);
-            gyro_angle = gyro_angle * 0.996f + accel_angle * 0.004f;
-            if ((gyro_angle < 65.0f) || (gyro_angle > 125.0f)) {
-                if(TRUE != robot_crashed) {
-                    robot_crashed = TRUE;
-                    enable_motors = FALSE;
-                    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-                    pid_total = 0.0f;
+            selfBalancingRobot.update_pid = FALSE;
+
+            if ((TRUE != selfBalancingRobot.robot_crashed) &&
+                (TRUE == selfBalancingRobot.motorsHandle.motorsEnabled))
+            {
+                if (selfBalancingRobot.robot_angle > (selfBalancingRobot.req_robot_angle + SET_POINT_DEVIATION)) {
+                    MOTORS_turnClockwise(&selfBalancingRobot.motorsHandle, (uint16_t)selfBalancingRobot.pidHandle.pid_total);
+                } else if (selfBalancingRobot.robot_angle < (selfBalancingRobot.req_robot_angle - SET_POINT_DEVIATION)) {
+                    MOTORS_turnCounterClockwise(&selfBalancingRobot.motorsHandle, (uint16_t)selfBalancingRobot.pidHandle.pid_total);
+                } else {
+                    MOTORS_powerOff(&selfBalancingRobot.motorsHandle);
                 }
             } else {
-                if(FALSE != robot_crashed) {
-                    robot_crashed = FALSE;
-                }
+                MOTORS_powerOff(&selfBalancingRobot.motorsHandle);
+                selfBalancingRobot.pidHandle.pid_total = 0.0f;
             }
-
-            if (TRUE != robot_crashed) {
-                pid_error = SET_POINT - gyro_angle;
-                /* calculate p of pid */
-                pid_p = Kp * pid_error;
-                /* limit p */
-                if (pid_p > 1023.0f) {
-                    pid_p = 1023.0f;
-                } else if (pid_p < -1023.0f) {
-                    pid_p = -1023.0f;
-                }
-                /* calculate i of pid if error is small */
-                if (pid_error > -2 && pid_error < 2 && pid_error != 0) {
-                    pid_i = pid_i + Ki * pid_error;
-                } else {
-                    pid_i = 0.0f;
-                }
-                /* limit i of pid */
-                if (pid_i < -1023.0f) {
-                    pid_i = -1023.0f;
-                } else if (pid_i > 1023.0f) {
-                    pid_i = 1023.0f;
-                }
-                /* calculate d of pid */
-                pid_d = Kd * (pid_error - pid_error_prev) / time_delta;
-                /* limit d of pid */
-                if (pid_d < -1023.0f) {
-                    pid_d = -1023.0f;
-                } else if (pid_d > 1023.0f) {
-                    pid_d = 1023.0f;
-                }
-                /* calculate pid_total (sum of p,i and d) */
-                pid_total = pid_p + pid_i + pid_d;
-                if (pid_total < 0.0f) {
-                    pid_total = -pid_total;
-                }
-                if ((gyro_angle > (SET_POINT + SP_DEVIATION)) && (TRUE == enable_motors)) {
-                    MOTORS_turnClockwise(&htim3, pid_total);
-                } else if ((gyro_angle < (SET_POINT - SP_DEVIATION)) && (TRUE == enable_motors)) {
-                    MOTORS_turnCounterClockwise(&htim3, pid_total);
-                } else {
-                    MOTORS_powerOff(&htim3);
-                }
-            } else {
-                MOTORS_powerOff(&htim3);
-            }
-
-            pid_error_prev = pid_error;
-            time_stamp_prev = time_stamp;
-            process_pid = FALSE;
-
         } else {
-            if (TRUE == send_important_data) {
-                send_important_data = FALSE;
+            if (TRUE == selfBalancingRobot.send_important_data) {
+                selfBalancingRobot.send_important_data = FALSE;
                 sprintf((char*) UART_tx_buffer[IMPORTANT_DATA], "!%.1f\t%.1f\0",
-                        gyro_angle, pid_error);
+                        selfBalancingRobot.robot_angle, selfBalancingRobot.pidHandle.pid_error);
                 HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[IMPORTANT_DATA], strlen((char*) UART_tx_buffer[IMPORTANT_DATA]), 100);
             }
-            if (TRUE == send_non_important_data) {
-                send_non_important_data = FALSE;
+            if (TRUE == selfBalancingRobot.send_non_important_data) {
+                selfBalancingRobot.send_non_important_data = FALSE;
                 sprintf((char*) UART_tx_buffer[NON_IMPORTANT_DATA], "\t%.1f\t%.1f\t%.1f\t%d\0",
-                        Kp, Ki, Kd, enable_motors);
+                        selfBalancingRobot.pidHandle.Kp, selfBalancingRobot.pidHandle.Ki, selfBalancingRobot.pidHandle.Kd, selfBalancingRobot.motorsHandle.motorsEnabled);
                 HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[NON_IMPORTANT_DATA], strlen((char*) UART_tx_buffer[NON_IMPORTANT_DATA]), 100);
             }
         }
-//        HAL_FLASHEx_Erase(&flashEraseInitStruct, &pageErr);
-//        HAL_FLASH_Program(FLASH_TYPEPROGRAM_HALFWORD, NV_MEMORY_ADDRESS, 0xABCD);
         /* USER CODE END 3 */
     }
 }
@@ -504,7 +400,6 @@ static void MX_GPIO_Init(void) {
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**

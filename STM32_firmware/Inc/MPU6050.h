@@ -29,12 +29,19 @@
 #define GYRO_CONFIG   (0x1B)
 #define ACCEL_CONFIG  (0x1C)
 
-void MPU6050_setReg(I2C_HandleTypeDef*, uint8_t, uint8_t);
-int16_t MPU6050_getAccel_X(I2C_HandleTypeDef*);
-int16_t MPU6050_getAccel_Y(I2C_HandleTypeDef*);
-int16_t MPU6050_getAccel_Z(I2C_HandleTypeDef*);
-int16_t MPU6050_getGyro_X(I2C_HandleTypeDef*);
-int16_t MPU6050_getGyro_Y(I2C_HandleTypeDef*);
-int16_t MPU6050_getGyro_Z(I2C_HandleTypeDef*);
+typedef struct MPU6050_handle_STRUCT {
+    I2C_HandleTypeDef *i2cHandlePtr;
+    int16_t accel_x;
+    int16_t accel_z;
+    int16_t gyro_y;
+    int32_t gyro_offset_x;
+    int32_t gyro_offset_y;
+    float accel_angle;
+    float gyro_angle;
+    uint8_t isAngleCritical;
+}MPU6050_handle_S;
+
+void MPU6050_init(MPU6050_handle_S*, I2C_HandleTypeDef *hi2c);
+void MPU6050_Handler(MPU6050_handle_S*);
 
 #endif /* INC_MPU6050_H_ */

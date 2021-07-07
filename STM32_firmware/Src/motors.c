@@ -15,49 +15,37 @@
   *
   ******************************************************************************
   */
-
 #include "motors.h"
+#include "main.h"
 
-/*
- * @brief Function to turn wheels clockwise utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- * @param v: speed, pwm duty cycle
- *              <0, timer period>
- */
-void MOTORS_turnClockwise(TIM_HandleTypeDef *htim, uint16_t v) {
+void MOTORS_init(MOTORS_handle_S *motorsHandlePtr, TIM_HandleTypeDef *timerHandlePtr) {
+    motorsHandlePtr->timerPtr = timerHandlePtr;
+}
+
+void MOTORS_turnClockwise(MOTORS_handle_S *motorsHandlePtr, uint16_t v) {
     HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_SET);
-    htim->Instance->CCR1 = v;
-    htim->Instance->CCR2 = v;
+    motorsHandlePtr->timerPtr->Instance->CCR1 = v;
+    motorsHandlePtr->timerPtr->Instance->CCR2 = v;
 }
 
-/*
- * @brief Function to turn wheels counter clockwise utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- * @param v: speed/pwm duty cycle
- *              <0, timer period>
- */
-void MOTORS_turnCounterClockwise(TIM_HandleTypeDef *htim, uint16_t v) {
+void MOTORS_turnCounterClockwise(MOTORS_handle_S *motorsHandlePtr, uint16_t v) {
     HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_SET);
     HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_RESET);
-    htim->Instance->CCR1 = v;
-    htim->Instance->CCR2 = v;
+    motorsHandlePtr->timerPtr->Instance->CCR1 = v;
+    motorsHandlePtr->timerPtr->Instance->CCR2 = v;
 }
 
-/*
- * @brief Function to turn off wheels utilizing LN298N module (H-bridge)
- * @param htim: TIM Base handle
- */
-void MOTORS_powerOff(TIM_HandleTypeDef *htim) {
+void MOTORS_powerOff(MOTORS_handle_S *motorsHandlePtr) {
     HAL_GPIO_WritePin(IN1_GPIO_Port, IN1_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN2_GPIO_Port, IN2_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN3_GPIO_Port, IN3_Pin, GPIO_PIN_RESET);
     HAL_GPIO_WritePin(IN4_GPIO_Port, IN4_Pin, GPIO_PIN_RESET);
-    htim->Instance->CCR1 = 0;
-    htim->Instance->CCR2 = 0;
+    motorsHandlePtr->timerPtr->Instance->CCR1 = 0;
+    motorsHandlePtr->timerPtr->Instance->CCR2 = 0;
 }
 

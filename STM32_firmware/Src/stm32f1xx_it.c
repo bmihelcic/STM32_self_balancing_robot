@@ -24,6 +24,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "conf.h"
+#include "self_balancing_robot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -42,17 +43,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-extern TIM_HandleTypeDef htim2;
-extern UART_HandleTypeDef huart1;
-extern volatile uint8_t process_pid;
-extern volatile uint8_t enable_motors;
-extern volatile float SET_POINT;
-extern volatile float Kp;
-extern volatile float Ki;
-extern volatile float Kd;
-extern volatile uint8_t send_important_data;
-extern volatile uint8_t send_non_important_data;
-extern volatile uint8_t robot_shutdown;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -68,6 +59,8 @@ extern volatile uint8_t robot_shutdown;
 /* External variables --------------------------------------------------------*/
 extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
+extern selfBalancingRobot_S selfBalancingRobot;
+
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -183,11 +176,14 @@ void SysTick_Handler(void) {
     /* USER CODE END SysTick_IRQn 0 */
     HAL_IncTick();
     /* USER CODE BEGIN SysTick_IRQn 1 */
+    if(uwTick % PID_UPDATE_FREQ == 0) {
+        selfBalancingRobot.update_pid = TRUE;
+    }
     if(uwTick % IMPORTANT_DATA_FREQ == 0) {
-        send_important_data = TRUE;
+        selfBalancingRobot.send_important_data = TRUE;
     }
     if(uwTick % NON_IMPORTANT_DATA_FREQ == 0) {
-        send_non_important_data = TRUE;
+        selfBalancingRobot.send_non_important_data = TRUE;
     }
     /* USER CODE END SysTick_IRQn 1 */
 }
@@ -204,7 +200,7 @@ void SysTick_Handler(void) {
  */
 void TIM2_IRQHandler(void) {
     /* USER CODE BEGIN TIM2_IRQn 0 */
-    process_pid = 1;
+//    update_pid = 1;
 
     /* USER CODE END TIM2_IRQn 0 */
     HAL_TIM_IRQHandler(&htim2);
@@ -222,50 +218,50 @@ void USART1_IRQHandler(void) {
     received_command = (USART1->DR & 0xFF);
     switch (received_command) {
     case COMMAND_SHUTDOWN:
-        robot_shutdown = TRUE;
+        selfBalancingRobot.robot_shutdown = TRUE;
         break;
     case COMMAND_RAISE_P:
-        Kp++;
+        selfBalancingRobot.pidHandle.Kp++;
         break;
     case COMMAND_LOWER_P:
-        Kp--;
+        selfBalancingRobot.pidHandle.Kp--;
         break;
     case COMMAND_RAISE_I:
-        Ki += 0.1f;
+        selfBalancingRobot.pidHandle.Ki += 0.1f;
         break;
     case COMMAND_LOWER_I:
-        Ki -= 0.1f;
+        selfBalancingRobot.pidHandle.Ki -= 0.1f;
         break;
     case COMMAND_RAISE_D:
-        Kd++;
+        selfBalancingRobot.pidHandle.Kd++;
         break;
     case COMMAND_LOWER_D:
-        Kd--;
+        selfBalancingRobot.pidHandle.Kd--;
         break;
     case COMMAND_RAISE_P10:
-        Kp += 10.0f;
+        selfBalancingRobot.pidHandle.Kp += 10.0f;
         break;
     case COMMAND_RAISE_D10:
-        Kd += 10.0f;
+        selfBalancingRobot.pidHandle.Kd += 10.0f;
         break;
     case COMMAND_LOWER_P10:
-        Kp -= 10.0f;
+        selfBalancingRobot.pidHandle.Kp -= 10.0f;
         break;
     case COMMAND_LOWER_D10:
-        Kd -= 10.0f;
+        selfBalancingRobot.pidHandle.Kd -= 10.0f;
         break;
     case COMMAND_SET_POINT_PLUS:
-        SET_POINT += 0.1f;
+        selfBalancingRobot.req_robot_angle += 0.1f;
         break;
     case COMMAND_SET_POINT_MINUS:
-        SET_POINT -= 0.1f;
+        selfBalancingRobot.req_robot_angle -= 0.1f;
         break;
     case COMMAND_ENABLE_MOTORS:
-        if (FALSE == enable_motors) {
-            enable_motors = TRUE;
+        if (FALSE == selfBalancingRobot.motorsHandle.motorsEnabled) {
+            selfBalancingRobot.motorsHandle.motorsEnabled = TRUE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
         } else {
-            enable_motors = FALSE;
+            selfBalancingRobot.motorsHandle.motorsEnabled = FALSE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
         }
         break;

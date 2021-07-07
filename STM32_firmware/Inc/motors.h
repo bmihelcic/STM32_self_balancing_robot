@@ -21,11 +21,16 @@
 #define INC_MOTORS_H_
 
 #include <stdint.h>
-#include "main.h"
 #include "stm32f1xx_hal.h"
 
-void MOTORS_turnClockwise(TIM_HandleTypeDef*, uint16_t);
-void MOTORS_turnCounterClockwise(TIM_HandleTypeDef*, uint16_t);
-void MOTORS_powerOff(TIM_HandleTypeDef*);
+typedef struct MOTORS_handle_STRUCT {
+    TIM_HandleTypeDef *timerPtr;
+    uint8_t motorsEnabled;
+}MOTORS_handle_S;
+
+void MOTORS_init(MOTORS_handle_S*, TIM_HandleTypeDef*);
+void MOTORS_turnClockwise(MOTORS_handle_S*, uint16_t);
+void MOTORS_turnCounterClockwise(MOTORS_handle_S*, uint16_t);
+void MOTORS_powerOff(MOTORS_handle_S*);
 
 #endif /* INC_MOTORS_H_ */
