@@ -59,7 +59,7 @@
 /* External variables --------------------------------------------------------*/
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
-extern selfBalancingRobot_S selfBalancingRobot;
+extern SELF_BALANCING_ROBOT_handle_S selfBalancingRobot;
 /* USER CODE END EV */
 
 /******************************************************************************/
@@ -211,7 +211,7 @@ void SysTick_Handler(void)
 void USART1_IRQHandler(void)
 {
   /* USER CODE BEGIN USART1_IRQn 0 */
-    static volatile uint32_t received_command = 0;
+    static volatile uint32_t received_command = COMMAND_DO_NOTHING;
     received_command = (USART1->DR & 0xFF);
     switch (received_command) {
     case COMMAND_SHUTDOWN:
@@ -238,11 +238,17 @@ void USART1_IRQHandler(void)
     case COMMAND_RAISE_P10:
         selfBalancingRobot.pidHandle.Kp += 10.0f;
         break;
+    case COMMAND_RAISE_I1:
+        selfBalancingRobot.pidHandle.Ki += 1.0f;
+        break;
     case COMMAND_RAISE_D10:
         selfBalancingRobot.pidHandle.Kd += 10.0f;
         break;
     case COMMAND_LOWER_P10:
         selfBalancingRobot.pidHandle.Kp -= 10.0f;
+        break;
+    case COMMAND_LOWER_I1:
+        selfBalancingRobot.pidHandle.Ki -= 1.0f;
         break;
     case COMMAND_LOWER_D10:
         selfBalancingRobot.pidHandle.Kd -= 10.0f;
@@ -266,7 +272,7 @@ void USART1_IRQHandler(void)
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         break;
     }
-    received_command = COMMAND_CLEAR;
+    received_command = COMMAND_DO_NOTHING;
 
   /* USER CODE END USART1_IRQn 0 */
   HAL_UART_IRQHandler(&huart1);

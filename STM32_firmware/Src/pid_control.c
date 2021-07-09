@@ -6,13 +6,13 @@
  */
 #include "pid_control.h"
 
-void PID_init(pidControlHandle_S *pidHandlePtr) {
+void PID_init(PID_handle_S *pidHandlePtr) {
     pidHandlePtr->Kp = 100.0f;
     pidHandlePtr->Ki = 50.0f;
     pidHandlePtr->Kd = 70.0f;
 }
 
-void PID_controlHandler(pidControlHandle_S *pidHandlePtr, float set_point, float process_variable) {
+void PID_controlHandler(PID_handle_S *pidHandlePtr, float set_point, float process_variable) {
     pidHandlePtr->time_stamp = HAL_GetTick();
     pidHandlePtr->time_delta = pidHandlePtr->time_stamp - pidHandlePtr->time_stamp_prev;
 
@@ -49,7 +49,7 @@ void PID_controlHandler(pidControlHandle_S *pidHandlePtr, float set_point, float
     pidHandlePtr->pid_total = pidHandlePtr->pid_p + pidHandlePtr->pid_i + pidHandlePtr->pid_d;
     if (pidHandlePtr->pid_total < 0.0f) {
         pidHandlePtr->pid_total = -(pidHandlePtr->pid_total);
-        }
+    }
 
     pidHandlePtr->pid_error_prev = pidHandlePtr->pid_error;
     pidHandlePtr->time_stamp_prev = pidHandlePtr->time_stamp;

@@ -68,7 +68,7 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-selfBalancingRobot_S selfBalancingRobot;
+SELF_BALANCING_ROBOT_handle_S selfBalancingRobot;
 
 uint8_t UART_tx_buffer[2][100] = { 0 };
 /* USER CODE END 0 */
@@ -90,7 +90,6 @@ int main(void)
 
   /* USER CODE BEGIN Init */
     selfBalancingRobot.req_robot_angle = INITIAL_UPRIGHT_ROBOT_ANGLE;
-    MOTORS_init(&selfBalancingRobot.motorsHandle, &htim3);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -106,16 +105,17 @@ int main(void)
   MX_TIM3_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-    HAL_Delay(2500);
-
-    MPU6050_init(&selfBalancingRobot.mpu6050Handle, &hi2c1);
-
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-
-    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+  HAL_Delay(2000);
+  // Initialize accelerometer and gyroscope
+  MPU6050_init(&selfBalancingRobot.mpu6050Handle, &hi2c1);
+  // Initialize PID controler
+  PID_init(&selfBalancingRobot.pidHandle);
+  // Turn the on-board LED off
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+  // Enable UART rx interrupts (bluetooth)
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+  // Initialize motors
+  MOTORS_init(&selfBalancingRobot.motorsHandle, &htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,29 +125,7 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
         if (TRUE == selfBalancingRobot.update_pid) {
-            MPU6050_Handler(&selfBalancingRobot.mpu6050Handle);
-
-            selfBalancingRobot.robot_angle = selfBalancingRobot.mpu6050Handle.gyro_angle;
-            selfBalancingRobot.robot_crashed = selfBalancingRobot.mpu6050Handle.isAngleCritical;
-
-            PID_controlHandler(&selfBalancingRobot.pidHandle, selfBalancingRobot.req_robot_angle, selfBalancingRobot.robot_angle);
-
-            selfBalancingRobot.update_pid = FALSE;
-
-            if ((TRUE != selfBalancingRobot.robot_crashed) &&
-                (TRUE == selfBalancingRobot.motorsHandle.motorsEnabled))
-            {
-                if (selfBalancingRobot.robot_angle > (selfBalancingRobot.req_robot_angle + SET_POINT_DEVIATION)) {
-                    MOTORS_turnClockwise(&selfBalancingRobot.motorsHandle, (uint16_t)selfBalancingRobot.pidHandle.pid_total);
-                } else if (selfBalancingRobot.robot_angle < (selfBalancingRobot.req_robot_angle - SET_POINT_DEVIATION)) {
-                    MOTORS_turnCounterClockwise(&selfBalancingRobot.motorsHandle, (uint16_t)selfBalancingRobot.pidHandle.pid_total);
-                } else {
-                    MOTORS_powerOff(&selfBalancingRobot.motorsHandle);
-                }
-            } else {
-                MOTORS_powerOff(&selfBalancingRobot.motorsHandle);
-                selfBalancingRobot.pidHandle.pid_total = 0.0f;
-            }
+            SELF_BALANCING_ROBOT_handler(&selfBalancingRobot);
         } else {
             if (TRUE == selfBalancingRobot.send_important_data) {
                 selfBalancingRobot.send_important_data = FALSE;

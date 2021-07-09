@@ -20,6 +20,8 @@
 
 void MOTORS_init(MOTORS_handle_S *motorsHandlePtr, TIM_HandleTypeDef *timerHandlePtr) {
     motorsHandlePtr->timerPtr = timerHandlePtr;
+    HAL_TIM_PWM_Start(motorsHandlePtr->timerPtr, TIM_CHANNEL_1);
+    HAL_TIM_PWM_Start(motorsHandlePtr->timerPtr, TIM_CHANNEL_2);
 }
 
 void MOTORS_turnClockwise(MOTORS_handle_S *motorsHandlePtr, uint16_t v) {

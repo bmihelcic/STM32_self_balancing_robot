@@ -12,7 +12,7 @@
 #include "stm32f1xx_hal.h"
 #include "MPU6050.h"
 
-typedef struct pidControlHandle_STRUCT {
+typedef struct PID_handle_STRUCT {
     volatile float Kp;
     volatile float Ki;
     volatile float Kd;
@@ -25,8 +25,9 @@ typedef struct pidControlHandle_STRUCT {
     uint32_t time_stamp;
     uint32_t time_stamp_prev;
     uint32_t time_delta;
-}pidControlHandle_S;
+}PID_handle_S;
 
-void PID_controlHandler(pidControlHandle_S*, float, float);
+void PID_init(PID_handle_S*);
+void PID_controlHandler(PID_handle_S*, float, float);
 
 #endif /* INC_PID_CONTROL_H_ */
