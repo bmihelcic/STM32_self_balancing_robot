@@ -19,10 +19,15 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
-#include "string.h"
+
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <stdio.h>
+#include <stdlib.h>
+#include <stdint.h>
+#include <string.h>
+#include "conf.h"
+#include "self_balancing_robot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,8 +37,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-volatile float SET_POINT = 85.5f;
-#define SP_DEVIATION    (0.0f)
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -44,7 +48,6 @@ volatile float SET_POINT = 85.5f;
 /* Private variables ---------------------------------------------------------*/
 I2C_HandleTypeDef hi2c1;
 
-TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
@@ -57,7 +60,6 @@ UART_HandleTypeDef huart1;
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
-static void MX_TIM2_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
@@ -66,435 +68,300 @@ static void MX_USART1_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-volatile uint8_t loop_flag = FALSE;
-volatile uint8_t enable_motors_flag = FALSE;
-volatile float Kp = 430.0f;
-volatile float Ki = 6.5f;
-volatile float Kd = 100.0f;
-uint8_t UART_tx_buffer[100] = { 0 };
+SELF_BALANCING_ROBOT_handle_S selfBalancingRobot;
+
+uint8_t UART_tx_buffer[2][100] = { 0 };
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void) {
-    /* USER CODE BEGIN 1 */
-    int16_t accel_x = 0;
-    int16_t accel_z = 0;
-    int16_t gyro_y = 0;
-    int32_t gyro_offset_x = 0;
-    int32_t gyro_offset_y = 0;
-    uint8_t robot_crashed_flag = TRUE;
-    uint8_t send_data_flag = FALSE;
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
 
-    /* PID controller variables */
-    float pid_error = 0.0f;
-    float pid_error_prev = 0.0f;
-    float pid_p = 0.0f;
-    float pid_i = 0.0f;
-    float pid_d = 0.0f;
-    float pid_total = 0.0f;
+  /* USER CODE END 1 */
 
-    uint32_t time_stamp = 0u;
-    uint32_t time_stamp_prev = 0u;
-    uint32_t time_delta = 0u;
+  /* MCU Configuration--------------------------------------------------------*/
 
-    float accel_angle = 0.0f;
-    float gyro_angle = 0.0f;
-    /* USER CODE END 1 */
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-    /* MCU Configuration--------------------------------------------------------*/
+  /* USER CODE BEGIN Init */
+    selfBalancingRobot.req_robot_angle = INITIAL_UPRIGHT_ROBOT_ANGLE;
+  /* USER CODE END Init */
 
-    /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-    HAL_Init();
+  /* Configure the system clock */
+  SystemClock_Config();
 
-    /* USER CODE BEGIN Init */
+  /* USER CODE BEGIN SysInit */
 
-    /* USER CODE END Init */
+  /* USER CODE END SysInit */
 
-    /* Configure the system clock */
-    SystemClock_Config();
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_I2C1_Init();
+  MX_TIM3_Init();
+  MX_USART1_UART_Init();
+  /* USER CODE BEGIN 2 */
+  HAL_Delay(2000);
+  // Initialize accelerometer and gyroscope
+  MPU6050_init(&selfBalancingRobot.mpu6050Handle, &hi2c1);
+  // Initialize PID controler
+  PID_init(&selfBalancingRobot.pidHandle);
+  // Turn the on-board LED off
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+  // Enable UART rx interrupts (bluetooth)
+  __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
+  // Initialize motors
+  MOTORS_init(&selfBalancingRobot.motorsHandle, &htim3);
+  /* USER CODE END 2 */
 
-    /* USER CODE BEGIN SysInit */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+    while (FALSE == selfBalancingRobot.robot_shutdown) {
+    /* USER CODE END WHILE */
 
-    /* USER CODE END SysInit */
-
-    /* Initialize all configured peripherals */
-    MX_GPIO_Init();
-    MX_I2C1_Init();
-    MX_TIM2_Init();
-    MX_TIM3_Init();
-    MX_USART1_UART_Init();
-    /* USER CODE BEGIN 2 */
-    HAL_Delay(2500);
-    MPU6050_setReg(&hi2c1, PWR_MGMT_1, 0x00);
-    MPU6050_setReg(&hi2c1, GYRO_CONFIG, 0x00);
-    MPU6050_setReg(&hi2c1, ACCEL_CONFIG, 0x08);
-    MPU6050_setReg(&hi2c1, CONFIG, 0x03);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-
-    for (size_t i = 0; i < 500; i++) {
-        if (i % 10 == 0) {
-            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        }
-        gyro_offset_x += MPU6050_getGyro_X(&hi2c1);
-        gyro_offset_y += MPU6050_getGyro_Y(&hi2c1);
-        HAL_Delay(4);
-    }
-    gyro_offset_x /= 500;
-    gyro_offset_y /= 500;
-
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-    HAL_TIM_Base_Start_IT(&htim2);
-
-    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
-    /* USER CODE END 2 */
-
-    /* Infinite loop */
-    /* USER CODE BEGIN WHILE */
-    while (1) {
-        /* USER CODE END WHILE */
-
-        /* USER CODE BEGIN 3 */
-        // true every 4ms, set by TIM2
-        if (TRUE == loop_flag) {
-            time_stamp = HAL_GetTick();
-            time_delta = time_stamp - time_stamp_prev;
-            accel_x = MPU6050_getAccel_X(&hi2c1);
-            accel_z = MPU6050_getAccel_Z(&hi2c1);
-
-            gyro_y = MPU6050_getGyro_Y(&hi2c1) - gyro_offset_y;
-
-            accel_angle = (atan2((double) accel_x, -(double) accel_z) * (180.0f / M_PI));
-
-            if ((TRUE == robot_crashed_flag) && (accel_angle > 70.0f) && (accel_angle < 120.0f)) {
-                robot_crashed_flag = FALSE;
-                gyro_angle = accel_angle;
-            }
-            gyro_angle += ((float) gyro_y / 32750.0f);
-            gyro_angle = gyro_angle * 0.996f + accel_angle * 0.004f;
-            if ((gyro_angle < 65.0f) || (gyro_angle > 125.0f)) {
-                if(TRUE != robot_crashed_flag) {
-                    robot_crashed_flag = TRUE;
-                    enable_motors_flag = FALSE;
-                    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
-                    pid_total = 0.0f;
-                }
-            } else {
-                if(FALSE != robot_crashed_flag) {
-                    robot_crashed_flag = FALSE;
-                }
-            }
-
-            if (TRUE != robot_crashed_flag) {
-                pid_error = SET_POINT - gyro_angle;
-                /* calculate p of pid */
-                pid_p = Kp * pid_error;
-                /* limit p */
-                if (pid_p > 1023.0f) {
-                    pid_p = 1023.0f;
-                } else if (pid_p < -1023.0f) {
-                    pid_p = -1023.0f;
-                }
-                /* calculate i of pid if error is small */
-                if (pid_error > -2 && pid_error < 2 && pid_error != 0) {
-                    pid_i = pid_i + Ki * pid_error;
-                } else {
-                    pid_i = 0.0f;
-                }
-                /* limit i of pid */
-                if (pid_i < -1023.0f) {
-                    pid_i = -1023.0f;
-                } else if (pid_i > 1023.0f) {
-                    pid_i = 1023.0f;
-                }
-                /* calculate d of pid */
-                pid_d = Kd * (pid_error - pid_error_prev) / time_delta;
-                /* limit d of pid */
-                if (pid_d < -1023.0f) {
-                    pid_d = -1023.0f;
-                } else if (pid_d > 1023.0f) {
-                    pid_d = 1023.0f;
-                }
-                /* calculate pid_total (sum of p,i and d) */
-                pid_total = pid_p + pid_i + pid_d;
-                if (pid_total < 0.0f) {
-                    pid_total = -pid_total;
-                }
-                if ((gyro_angle > (SET_POINT + SP_DEVIATION)) && (TRUE == enable_motors_flag)) {
-                    turnMotorsClockwise(&htim3, pid_total);
-                } else if ((gyro_angle < (SET_POINT - SP_DEVIATION)) && (TRUE == enable_motors_flag)) {
-                    turnMotorsCounterClockwise(&htim3, pid_total);
-                } else {
-                    resetMotors(&htim3);
-                }
-            } else {
-                resetMotors(&htim3);
-            }
-
-            sprintf((char*) UART_tx_buffer, "%.2f\t%.2f\t%.2f\t%.2f\t%.2f\t|\t%.2f\t%.2f\t%.2f\t%d\r\n",
-                    gyro_angle, pid_error, pid_p, pid_i, pid_d, Kp, Ki, Kd, enable_motors_flag);
-            send_data_flag = TRUE;
-
-            pid_error_prev = pid_error;
-            time_stamp_prev = time_stamp;
-            loop_flag = FALSE;
+    /* USER CODE BEGIN 3 */
+        if (TRUE == selfBalancingRobot.update_pid) {
+            SELF_BALANCING_ROBOT_handler(&selfBalancingRobot);
         } else {
-            if (TRUE == send_data_flag) {
-                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer, strlen((char*) UART_tx_buffer), 100);
-                send_data_flag = FALSE;
+            if (TRUE == selfBalancingRobot.send_important_data) {
+                selfBalancingRobot.send_important_data = FALSE;
+                sprintf((char*) UART_tx_buffer[IMPORTANT_DATA], "!%.1f\t%.1f\0",
+                        selfBalancingRobot.robot_angle, selfBalancingRobot.pidHandle.pid_error);
+                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[IMPORTANT_DATA], strlen((char*) UART_tx_buffer[IMPORTANT_DATA]), 100);
+            }
+            if (TRUE == selfBalancingRobot.send_non_important_data) {
+                selfBalancingRobot.send_non_important_data = FALSE;
+                sprintf((char*) UART_tx_buffer[NON_IMPORTANT_DATA], "\t%.1f\t%.1f\t%.1f\t%d\0",
+                        selfBalancingRobot.pidHandle.Kp, selfBalancingRobot.pidHandle.Ki, selfBalancingRobot.pidHandle.Kd, selfBalancingRobot.motorsHandle.motorsEnabled);
+                HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[NON_IMPORTANT_DATA], strlen((char*) UART_tx_buffer[NON_IMPORTANT_DATA]), 100);
             }
         }
-        /* USER CODE END 3 */
     }
+  /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
-void SystemClock_Config(void) {
-    RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-    RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-    /** Initializes the RCC Oscillators according to the specified parameters
-     * in the RCC_OscInitTypeDef structure.
-     */
-    RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-    RCC_OscInitStruct.HSEState = RCC_HSE_ON;
-    RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
-    RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-    RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-    RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-    RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-    if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-        Error_Handler();
-    }
-    /** Initializes the CPU, AHB and APB buses clocks
-     */
-    RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK | RCC_CLOCKTYPE_PCLK1
-            | RCC_CLOCKTYPE_PCLK2;
-    RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-    RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-    RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
-    RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+  RCC_OscInitStruct.HSEState = RCC_HSE_ON;
+  RCC_OscInitStruct.HSEPredivValue = RCC_HSE_PREDIV_DIV1;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+  RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV2;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
 
-    if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK) {
-        Error_Handler();
-    }
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /**
- * @brief I2C1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_I2C1_Init(void) {
+  * @brief I2C1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_I2C1_Init(void)
+{
 
-    /* USER CODE BEGIN I2C1_Init 0 */
+  /* USER CODE BEGIN I2C1_Init 0 */
 
-    /* USER CODE END I2C1_Init 0 */
+  /* USER CODE END I2C1_Init 0 */
 
-    /* USER CODE BEGIN I2C1_Init 1 */
+  /* USER CODE BEGIN I2C1_Init 1 */
 
-    /* USER CODE END I2C1_Init 1 */
-    hi2c1.Instance = I2C1;
-    hi2c1.Init.ClockSpeed = 100000;
-    hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
-    hi2c1.Init.OwnAddress1 = 0;
-    hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
-    hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
-    hi2c1.Init.OwnAddress2 = 0;
-    hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
-    hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
-    if (HAL_I2C_Init(&hi2c1) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN I2C1_Init 2 */
+  /* USER CODE END I2C1_Init 1 */
+  hi2c1.Instance = I2C1;
+  hi2c1.Init.ClockSpeed = 100000;
+  hi2c1.Init.DutyCycle = I2C_DUTYCYCLE_2;
+  hi2c1.Init.OwnAddress1 = 0;
+  hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
+  hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
+  hi2c1.Init.OwnAddress2 = 0;
+  hi2c1.Init.GeneralCallMode = I2C_GENERALCALL_DISABLE;
+  hi2c1.Init.NoStretchMode = I2C_NOSTRETCH_DISABLE;
+  if (HAL_I2C_Init(&hi2c1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN I2C1_Init 2 */
 
-    /* USER CODE END I2C1_Init 2 */
-
-}
-
-/**
- * @brief TIM2 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_TIM2_Init(void) {
-
-    /* USER CODE BEGIN TIM2_Init 0 */
-
-    /* USER CODE END TIM2_Init 0 */
-
-    TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
-    TIM_MasterConfigTypeDef sMasterConfig = { 0 };
-
-    /* USER CODE BEGIN TIM2_Init 1 */
-
-    /* USER CODE END TIM2_Init 1 */
-    htim2.Instance = TIM2;
-    htim2.Init.Prescaler = 5;
-    htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim2.Init.Period = 47999;
-    htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    if (HAL_TIM_Base_Init(&htim2) != HAL_OK) {
-        Error_Handler();
-    }
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    if (HAL_TIM_ConfigClockSource(&htim2, &sClockSourceConfig) != HAL_OK) {
-        Error_Handler();
-    }
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(&htim2, &sMasterConfig) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN TIM2_Init 2 */
-
-    /* USER CODE END TIM2_Init 2 */
+  /* USER CODE END I2C1_Init 2 */
 
 }
 
 /**
- * @brief TIM3 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_TIM3_Init(void) {
+  * @brief TIM3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_TIM3_Init(void)
+{
 
-    /* USER CODE BEGIN TIM3_Init 0 */
+  /* USER CODE BEGIN TIM3_Init 0 */
 
-    /* USER CODE END TIM3_Init 0 */
+  /* USER CODE END TIM3_Init 0 */
 
-    TIM_ClockConfigTypeDef sClockSourceConfig = { 0 };
-    TIM_MasterConfigTypeDef sMasterConfig = { 0 };
-    TIM_OC_InitTypeDef sConfigOC = { 0 };
+  TIM_ClockConfigTypeDef sClockSourceConfig = {0};
+  TIM_MasterConfigTypeDef sMasterConfig = {0};
+  TIM_OC_InitTypeDef sConfigOC = {0};
 
-    /* USER CODE BEGIN TIM3_Init 1 */
+  /* USER CODE BEGIN TIM3_Init 1 */
 
-    /* USER CODE END TIM3_Init 1 */
-    htim3.Instance = TIM3;
-    htim3.Init.Prescaler = 1;
-    htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
-    htim3.Init.Period = 1023;
-    htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
-    htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
-    if (HAL_TIM_Base_Init(&htim3) != HAL_OK) {
-        Error_Handler();
-    }
-    sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
-    if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK) {
-        Error_Handler();
-    }
-    if (HAL_TIM_PWM_Init(&htim3) != HAL_OK) {
-        Error_Handler();
-    }
-    sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
-    sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
-    if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK) {
-        Error_Handler();
-    }
-    sConfigOC.OCMode = TIM_OCMODE_PWM1;
-    sConfigOC.Pulse = 0;
-    sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
-    sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
-    if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK) {
-        Error_Handler();
-    }
-    if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN TIM3_Init 2 */
+  /* USER CODE END TIM3_Init 1 */
+  htim3.Instance = TIM3;
+  htim3.Init.Prescaler = 1;
+  htim3.Init.CounterMode = TIM_COUNTERMODE_UP;
+  htim3.Init.Period = 1023;
+  htim3.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+  htim3.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+  if (HAL_TIM_Base_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sClockSourceConfig.ClockSource = TIM_CLOCKSOURCE_INTERNAL;
+  if (HAL_TIM_ConfigClockSource(&htim3, &sClockSourceConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_Init(&htim3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sMasterConfig.MasterOutputTrigger = TIM_TRGO_RESET;
+  sMasterConfig.MasterSlaveMode = TIM_MASTERSLAVEMODE_DISABLE;
+  if (HAL_TIMEx_MasterConfigSynchronization(&htim3, &sMasterConfig) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  sConfigOC.OCMode = TIM_OCMODE_PWM1;
+  sConfigOC.Pulse = 0;
+  sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
+  sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  if (HAL_TIM_PWM_ConfigChannel(&htim3, &sConfigOC, TIM_CHANNEL_2) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN TIM3_Init 2 */
 
-    /* USER CODE END TIM3_Init 2 */
-    HAL_TIM_MspPostInit(&htim3);
-
-}
-
-/**
- * @brief USART1 Initialization Function
- * @param None
- * @retval None
- */
-static void MX_USART1_UART_Init(void) {
-
-    /* USER CODE BEGIN USART1_Init 0 */
-
-    /* USER CODE END USART1_Init 0 */
-
-    /* USER CODE BEGIN USART1_Init 1 */
-
-    /* USER CODE END USART1_Init 1 */
-    huart1.Instance = USART1;
-    huart1.Init.BaudRate = 115200;
-    huart1.Init.WordLength = UART_WORDLENGTH_8B;
-    huart1.Init.StopBits = UART_STOPBITS_1;
-    huart1.Init.Parity = UART_PARITY_NONE;
-    huart1.Init.Mode = UART_MODE_TX_RX;
-    huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
-    huart1.Init.OverSampling = UART_OVERSAMPLING_16;
-    if (HAL_UART_Init(&huart1) != HAL_OK) {
-        Error_Handler();
-    }
-    /* USER CODE BEGIN USART1_Init 2 */
-
-    /* USER CODE END USART1_Init 2 */
+  /* USER CODE END TIM3_Init 2 */
+  HAL_TIM_MspPostInit(&htim3);
 
 }
 
 /**
- * @brief GPIO Initialization Function
- * @param None
- * @retval None
- */
-static void MX_GPIO_Init(void) {
-    GPIO_InitTypeDef GPIO_InitStruct = { 0 };
+  * @brief USART1 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART1_UART_Init(void)
+{
 
-    /* GPIO Ports Clock Enable */
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
+  /* USER CODE BEGIN USART1_Init 0 */
 
-    /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+  /* USER CODE END USART1_Init 0 */
 
-    /*Configure GPIO pin Output Level */
-    HAL_GPIO_WritePin(GPIOB, IN1_Pin | IN2_Pin | IN3_Pin | IN4_Pin, GPIO_PIN_RESET);
+  /* USER CODE BEGIN USART1_Init 1 */
 
-    /*Configure GPIO pin : LED_Pin */
-    GPIO_InitStruct.Pin = LED_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+  /* USER CODE END USART1_Init 1 */
+  huart1.Instance = USART1;
+  huart1.Init.BaudRate = 115200;
+  huart1.Init.WordLength = UART_WORDLENGTH_8B;
+  huart1.Init.StopBits = UART_STOPBITS_1;
+  huart1.Init.Parity = UART_PARITY_NONE;
+  huart1.Init.Mode = UART_MODE_TX_RX;
+  huart1.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart1.Init.OverSampling = UART_OVERSAMPLING_16;
+  if (HAL_UART_Init(&huart1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART1_Init 2 */
 
-    /*Configure GPIO pins : IN1_Pin IN2_Pin IN3_Pin IN4_Pin */
-    GPIO_InitStruct.Pin = IN1_Pin | IN2_Pin | IN3_Pin | IN4_Pin;
-    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-    GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-    HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+  /* USER CODE END USART1_Init 2 */
+
+}
+
+/**
+  * @brief GPIO Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_GPIO_Init(void)
+{
+  GPIO_InitTypeDef GPIO_InitStruct = {0};
+
+  /* GPIO Ports Clock Enable */
+  __HAL_RCC_GPIOC_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
+  __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOB_CLK_ENABLE();
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(GPIOB, IN1_Pin|IN2_Pin|IN3_Pin|IN4_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin : LED_Pin */
+  GPIO_InitStruct.Pin = LED_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pins : IN1_Pin IN2_Pin IN3_Pin IN4_Pin */
+  GPIO_InitStruct.Pin = IN1_Pin|IN2_Pin|IN3_Pin|IN4_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
 }
 
 /* USER CODE BEGIN 4 */
-
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-void Error_Handler(void) {
-    /* USER CODE BEGIN Error_Handler_Debug */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
     /* User can add his own implementation to report the HAL error return state */
 
-    /* USER CODE END Error_Handler_Debug */
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

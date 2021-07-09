@@ -23,6 +23,8 @@
 #include "stm32f1xx_it.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "conf.h"
+#include "self_balancing_robot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,20 +34,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define COMMAND_CLEAR            (0x00)
-#define COMMAND_RAISE_P          (0x30)
-#define COMMAND_RAISE_I          (0x31)
-#define COMMAND_RAISE_D          (0x32)
-#define COMMAND_RAISE_P10        (0x33)
-#define COMMAND_RAISE_D10        (0x34)
-#define COMMAND_LOWER_P          (0x35)
-#define COMMAND_LOWER_I          (0x36)
-#define COMMAND_LOWER_D          (0x37)
-#define COMMAND_LOWER_P10        (0x38)
-#define COMMAND_LOWER_D10        (0x39)
-#define COMMAND_ENABLE_MOTORS    (0x0E)
-#define COMMAND_SET_POINT_PLUS   (0x51)
-#define COMMAND_SET_POINT_MINUS  (0x52)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -55,14 +43,7 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-extern TIM_HandleTypeDef htim2;
-extern UART_HandleTypeDef huart1;
-extern volatile uint8_t loop_flag;
-extern volatile uint8_t enable_motors_flag;
-extern volatile float SET_POINT;
-extern volatile float Kp;
-extern volatile float Ki;
-extern volatile float Kd;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -76,126 +57,145 @@ extern volatile float Kd;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-extern TIM_HandleTypeDef htim2;
 extern UART_HandleTypeDef huart1;
 /* USER CODE BEGIN EV */
-
+extern SELF_BALANCING_ROBOT_handle_S selfBalancingRobot;
 /* USER CODE END EV */
 
 /******************************************************************************/
 /*           Cortex-M3 Processor Interruption and Exception Handlers          */
 /******************************************************************************/
 /**
- * @brief This function handles Non maskable interrupt.
- */
-void NMI_Handler(void) {
-    /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
+  * @brief This function handles Non maskable interrupt.
+  */
+void NMI_Handler(void)
+{
+  /* USER CODE BEGIN NonMaskableInt_IRQn 0 */
 
-    /* USER CODE END NonMaskableInt_IRQn 0 */
-    /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
+  /* USER CODE END NonMaskableInt_IRQn 0 */
+  /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
 
-    /* USER CODE END NonMaskableInt_IRQn 1 */
+  /* USER CODE END NonMaskableInt_IRQn 1 */
 }
 
 /**
- * @brief This function handles Hard fault interrupt.
- */
-void HardFault_Handler(void) {
-    /* USER CODE BEGIN HardFault_IRQn 0 */
+  * @brief This function handles Hard fault interrupt.
+  */
+void HardFault_Handler(void)
+{
+  /* USER CODE BEGIN HardFault_IRQn 0 */
 
-    /* USER CODE END HardFault_IRQn 0 */
-    while (1) {
-        /* USER CODE BEGIN W1_HardFault_IRQn 0 */
-        /* USER CODE END W1_HardFault_IRQn 0 */
+  /* USER CODE END HardFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
+  }
+}
+
+/**
+  * @brief This function handles Memory management fault.
+  */
+void MemManage_Handler(void)
+{
+  /* USER CODE BEGIN MemoryManagement_IRQn 0 */
+
+  /* USER CODE END MemoryManagement_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
+    /* USER CODE END W1_MemoryManagement_IRQn 0 */
+  }
+}
+
+/**
+  * @brief This function handles Prefetch fault, memory access fault.
+  */
+void BusFault_Handler(void)
+{
+  /* USER CODE BEGIN BusFault_IRQn 0 */
+
+  /* USER CODE END BusFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_BusFault_IRQn 0 */
+    /* USER CODE END W1_BusFault_IRQn 0 */
+  }
+}
+
+/**
+  * @brief This function handles Undefined instruction or illegal state.
+  */
+void UsageFault_Handler(void)
+{
+  /* USER CODE BEGIN UsageFault_IRQn 0 */
+
+  /* USER CODE END UsageFault_IRQn 0 */
+  while (1)
+  {
+    /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
+    /* USER CODE END W1_UsageFault_IRQn 0 */
+  }
+}
+
+/**
+  * @brief This function handles System service call via SWI instruction.
+  */
+void SVC_Handler(void)
+{
+  /* USER CODE BEGIN SVCall_IRQn 0 */
+
+  /* USER CODE END SVCall_IRQn 0 */
+  /* USER CODE BEGIN SVCall_IRQn 1 */
+
+  /* USER CODE END SVCall_IRQn 1 */
+}
+
+/**
+  * @brief This function handles Debug monitor.
+  */
+void DebugMon_Handler(void)
+{
+  /* USER CODE BEGIN DebugMonitor_IRQn 0 */
+
+  /* USER CODE END DebugMonitor_IRQn 0 */
+  /* USER CODE BEGIN DebugMonitor_IRQn 1 */
+
+  /* USER CODE END DebugMonitor_IRQn 1 */
+}
+
+/**
+  * @brief This function handles Pendable request for system service.
+  */
+void PendSV_Handler(void)
+{
+  /* USER CODE BEGIN PendSV_IRQn 0 */
+
+  /* USER CODE END PendSV_IRQn 0 */
+  /* USER CODE BEGIN PendSV_IRQn 1 */
+
+  /* USER CODE END PendSV_IRQn 1 */
+}
+
+/**
+  * @brief This function handles System tick timer.
+  */
+void SysTick_Handler(void)
+{
+  /* USER CODE BEGIN SysTick_IRQn 0 */
+  /* USER CODE END SysTick_IRQn 0 */
+  HAL_IncTick();
+  /* USER CODE BEGIN SysTick_IRQn 1 */
+    if(uwTick % PID_UPDATE_FREQ == 0) {
+        selfBalancingRobot.update_pid = TRUE;
     }
-}
-
-/**
- * @brief This function handles Memory management fault.
- */
-void MemManage_Handler(void) {
-    /* USER CODE BEGIN MemoryManagement_IRQn 0 */
-
-    /* USER CODE END MemoryManagement_IRQn 0 */
-    while (1) {
-        /* USER CODE BEGIN W1_MemoryManagement_IRQn 0 */
-        /* USER CODE END W1_MemoryManagement_IRQn 0 */
+    if(uwTick % IMPORTANT_DATA_FREQ == 0) {
+        selfBalancingRobot.send_important_data = TRUE;
     }
-}
-
-/**
- * @brief This function handles Prefetch fault, memory access fault.
- */
-void BusFault_Handler(void) {
-    /* USER CODE BEGIN BusFault_IRQn 0 */
-
-    /* USER CODE END BusFault_IRQn 0 */
-    while (1) {
-        /* USER CODE BEGIN W1_BusFault_IRQn 0 */
-        /* USER CODE END W1_BusFault_IRQn 0 */
+    if(uwTick % NON_IMPORTANT_DATA_FREQ == 0) {
+        selfBalancingRobot.send_non_important_data = TRUE;
     }
-}
-
-/**
- * @brief This function handles Undefined instruction or illegal state.
- */
-void UsageFault_Handler(void) {
-    /* USER CODE BEGIN UsageFault_IRQn 0 */
-
-    /* USER CODE END UsageFault_IRQn 0 */
-    while (1) {
-        /* USER CODE BEGIN W1_UsageFault_IRQn 0 */
-        /* USER CODE END W1_UsageFault_IRQn 0 */
-    }
-}
-
-/**
- * @brief This function handles System service call via SWI instruction.
- */
-void SVC_Handler(void) {
-    /* USER CODE BEGIN SVCall_IRQn 0 */
-
-    /* USER CODE END SVCall_IRQn 0 */
-    /* USER CODE BEGIN SVCall_IRQn 1 */
-
-    /* USER CODE END SVCall_IRQn 1 */
-}
-
-/**
- * @brief This function handles Debug monitor.
- */
-void DebugMon_Handler(void) {
-    /* USER CODE BEGIN DebugMonitor_IRQn 0 */
-
-    /* USER CODE END DebugMonitor_IRQn 0 */
-    /* USER CODE BEGIN DebugMonitor_IRQn 1 */
-
-    /* USER CODE END DebugMonitor_IRQn 1 */
-}
-
-/**
- * @brief This function handles Pendable request for system service.
- */
-void PendSV_Handler(void) {
-    /* USER CODE BEGIN PendSV_IRQn 0 */
-
-    /* USER CODE END PendSV_IRQn 0 */
-    /* USER CODE BEGIN PendSV_IRQn 1 */
-
-    /* USER CODE END PendSV_IRQn 1 */
-}
-
-/**
- * @brief This function handles System tick timer.
- */
-void SysTick_Handler(void) {
-    /* USER CODE BEGIN SysTick_IRQn 0 */
-
-    /* USER CODE END SysTick_IRQn 0 */
-    HAL_IncTick();
-    /* USER CODE BEGIN SysTick_IRQn 1 */
-
-    /* USER CODE END SysTick_IRQn 1 */
+  /* USER CODE END SysTick_IRQn 1 */
 }
 
 /******************************************************************************/
@@ -206,69 +206,65 @@ void SysTick_Handler(void) {
 /******************************************************************************/
 
 /**
- * @brief This function handles TIM2 global interrupt.
- */
-void TIM2_IRQHandler(void) {
-    /* USER CODE BEGIN TIM2_IRQn 0 */
-    loop_flag = 1;
-
-    /* USER CODE END TIM2_IRQn 0 */
-    HAL_TIM_IRQHandler(&htim2);
-    /* USER CODE BEGIN TIM2_IRQn 1 */
-
-    /* USER CODE END TIM2_IRQn 1 */
-}
-
-/**
- * @brief This function handles USART1 global interrupt.
- */
-void USART1_IRQHandler(void) {
-    static volatile uint32_t received_command = 0;
-    /* USER CODE BEGIN USART1_IRQn 0 */
+  * @brief This function handles USART1 global interrupt.
+  */
+void USART1_IRQHandler(void)
+{
+  /* USER CODE BEGIN USART1_IRQn 0 */
+    static volatile uint32_t received_command = COMMAND_DO_NOTHING;
     received_command = (USART1->DR & 0xFF);
     switch (received_command) {
+    case COMMAND_SHUTDOWN:
+        selfBalancingRobot.robot_shutdown = TRUE;
+        break;
     case COMMAND_RAISE_P:
-        Kp++;
+        selfBalancingRobot.pidHandle.Kp++;
         break;
     case COMMAND_LOWER_P:
-        Kp--;
+        selfBalancingRobot.pidHandle.Kp--;
         break;
     case COMMAND_RAISE_I:
-        Ki += 0.1f;
+        selfBalancingRobot.pidHandle.Ki += 0.1f;
         break;
     case COMMAND_LOWER_I:
-        Ki -= 0.1f;
+        selfBalancingRobot.pidHandle.Ki -= 0.1f;
         break;
     case COMMAND_RAISE_D:
-        Kd++;
+        selfBalancingRobot.pidHandle.Kd++;
         break;
     case COMMAND_LOWER_D:
-        Kd--;
+        selfBalancingRobot.pidHandle.Kd--;
         break;
     case COMMAND_RAISE_P10:
-        Kp += 10.0f;
+        selfBalancingRobot.pidHandle.Kp += 10.0f;
+        break;
+    case COMMAND_RAISE_I1:
+        selfBalancingRobot.pidHandle.Ki += 1.0f;
         break;
     case COMMAND_RAISE_D10:
-        Kd += 10.0f;
+        selfBalancingRobot.pidHandle.Kd += 10.0f;
         break;
     case COMMAND_LOWER_P10:
-        Kp -= 10.0f;
+        selfBalancingRobot.pidHandle.Kp -= 10.0f;
+        break;
+    case COMMAND_LOWER_I1:
+        selfBalancingRobot.pidHandle.Ki -= 1.0f;
         break;
     case COMMAND_LOWER_D10:
-        Kd -= 10.0f;
+        selfBalancingRobot.pidHandle.Kd -= 10.0f;
         break;
     case COMMAND_SET_POINT_PLUS:
-        SET_POINT += 0.1f;
+        selfBalancingRobot.req_robot_angle += 0.1f;
         break;
     case COMMAND_SET_POINT_MINUS:
-        SET_POINT -= 0.1f;
+        selfBalancingRobot.req_robot_angle -= 0.1f;
         break;
     case COMMAND_ENABLE_MOTORS:
-        if (FALSE == enable_motors_flag) {
-            enable_motors_flag = TRUE;
+        if (FALSE == selfBalancingRobot.motorsHandle.motorsEnabled) {
+            selfBalancingRobot.motorsHandle.motorsEnabled = TRUE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
         } else {
-            enable_motors_flag = FALSE;
+            selfBalancingRobot.motorsHandle.motorsEnabled = FALSE;
             HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
         }
         break;
@@ -276,13 +272,13 @@ void USART1_IRQHandler(void) {
         HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
         break;
     }
-    received_command = COMMAND_CLEAR;
+    received_command = COMMAND_DO_NOTHING;
 
-    /* USER CODE END USART1_IRQn 0 */
-    HAL_UART_IRQHandler(&huart1);
-    /* USER CODE BEGIN USART1_IRQn 1 */
+  /* USER CODE END USART1_IRQn 0 */
+  HAL_UART_IRQHandler(&huart1);
+  /* USER CODE BEGIN USART1_IRQn 1 */
 
-    /* USER CODE END USART1_IRQn 1 */
+  /* USER CODE END USART1_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
