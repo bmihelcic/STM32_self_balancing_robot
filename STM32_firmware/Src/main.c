@@ -19,12 +19,13 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "cmsis_os.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdint.h>
+//#include <stdint.h>
 #include <string.h>
 #include "conf.h"
 #include "self_balancing_robot.h"
@@ -37,7 +38,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -52,6 +52,30 @@ TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
 
+osThreadId defaultTaskHandle;
+uint32_t defaultTaskBuffer[ 128 ];
+osStaticThreadDef_t defaultTaskControlBlock;
+osThreadId mpu6050TaskHandle;
+uint32_t mpu6050TaskBuffer[ 128 ];
+osStaticThreadDef_t mpu6050TaskControlBlock;
+osThreadId pidCtrlTaskHandle;
+uint32_t pidControllerTaBuffer[ 128 ];
+osStaticThreadDef_t pidControllerTaControlBlock;
+osThreadId sbrMasterTaskHandle;
+uint32_t sbrMasterTaskBuffer[ 128 ];
+osStaticThreadDef_t sbrMasterTaskControlBlock;
+osThreadId debugMsgTaskHandle;
+uint32_t debugMessengerHBuffer[ 128 ];
+osStaticThreadDef_t debugMessengerHControlBlock;
+osThreadId sbrCmdTaskHandle;
+uint32_t sbrCommandHandlBuffer[ 128 ];
+osStaticThreadDef_t sbrCommandHandlControlBlock;
+osThreadId motorCtrlTaskHandle;
+uint32_t motorCtrlTaskBuffer[ 128 ];
+osStaticThreadDef_t motorCtrlTaskControlBlock;
+osThreadId ledTaskHandle;
+uint32_t ledTaskBuffer[ 128 ];
+osStaticThreadDef_t ledTaskControlBlock;
 /* USER CODE BEGIN PV */
 
 /* USER CODE END PV */
@@ -62,6 +86,15 @@ static void MX_GPIO_Init(void);
 static void MX_I2C1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_USART1_UART_Init(void);
+void StartDefaultTask(void const * argument);
+void StartMpu6050Task(void const * argument);
+void StartPidControllerTask(void const * argument);
+void StartSbrMasterTask(void const * argument);
+void StartDebugMessengerTask(void const * argument);
+void StartSbrCommandTask(void const * argument);
+void StartMotorCtrlTask(void const * argument);
+void StartLedTask(void const * argument);
+
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -118,6 +151,62 @@ int main(void)
   MOTORS_init(&selfBalancingRobot.motorsHandle, &htim3);
   /* USER CODE END 2 */
 
+  /* USER CODE BEGIN RTOS_MUTEX */
+  /* add mutexes, ... */
+  /* USER CODE END RTOS_MUTEX */
+
+  /* USER CODE BEGIN RTOS_SEMAPHORES */
+  /* add semaphores, ... */
+  /* USER CODE END RTOS_SEMAPHORES */
+
+  /* USER CODE BEGIN RTOS_TIMERS */
+  /* start timers, add new ones, ... */
+  /* USER CODE END RTOS_TIMERS */
+
+  /* USER CODE BEGIN RTOS_QUEUES */
+  /* add queues, ... */
+  /* USER CODE END RTOS_QUEUES */
+
+  /* Create the thread(s) */
+  /* definition and creation of defaultTask */
+  osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityLow, 0, 128, defaultTaskBuffer, &defaultTaskControlBlock);
+  defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
+
+  /* definition and creation of mpu6050Task */
+  osThreadStaticDef(mpu6050Task, StartMpu6050Task, osPriorityHigh, 0, 128, mpu6050TaskBuffer, &mpu6050TaskControlBlock);
+  mpu6050TaskHandle = osThreadCreate(osThread(mpu6050Task), NULL);
+
+  /* definition and creation of pidCtrlTask */
+  osThreadStaticDef(pidCtrlTask, StartPidControllerTask, osPriorityHigh, 0, 128, pidControllerTaBuffer, &pidControllerTaControlBlock);
+  pidCtrlTaskHandle = osThreadCreate(osThread(pidCtrlTask), NULL);
+
+  /* definition and creation of sbrMasterTask */
+  osThreadStaticDef(sbrMasterTask, StartSbrMasterTask, osPriorityAboveNormal, 0, 128, sbrMasterTaskBuffer, &sbrMasterTaskControlBlock);
+  sbrMasterTaskHandle = osThreadCreate(osThread(sbrMasterTask), NULL);
+
+  /* definition and creation of debugMsgTask */
+  osThreadStaticDef(debugMsgTask, StartDebugMessengerTask, osPriorityLow, 0, 128, debugMessengerHBuffer, &debugMessengerHControlBlock);
+  debugMsgTaskHandle = osThreadCreate(osThread(debugMsgTask), NULL);
+
+  /* definition and creation of sbrCmdTask */
+  osThreadStaticDef(sbrCmdTask, StartSbrCommandTask, osPriorityLow, 0, 128, sbrCommandHandlBuffer, &sbrCommandHandlControlBlock);
+  sbrCmdTaskHandle = osThreadCreate(osThread(sbrCmdTask), NULL);
+
+  /* definition and creation of motorCtrlTask */
+  osThreadStaticDef(motorCtrlTask, StartMotorCtrlTask, osPriorityHigh, 0, 128, motorCtrlTaskBuffer, &motorCtrlTaskControlBlock);
+  motorCtrlTaskHandle = osThreadCreate(osThread(motorCtrlTask), NULL);
+
+  /* definition and creation of ledTask */
+  osThreadStaticDef(ledTask, StartLedTask, osPriorityLow, 0, 128, ledTaskBuffer, &ledTaskControlBlock);
+  ledTaskHandle = osThreadCreate(osThread(ledTask), NULL);
+
+  /* USER CODE BEGIN RTOS_THREADS */
+  /* add threads, ... */
+  /* USER CODE END RTOS_THREADS */
+
+  /* Start scheduler */
+  osKernelStart();
+  /* We should never get here as control is now taken by the scheduler */
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
     while (FALSE == selfBalancingRobot.robot_shutdown) {
@@ -129,14 +218,11 @@ int main(void)
         } else {
             if (TRUE == selfBalancingRobot.send_important_data) {
                 selfBalancingRobot.send_important_data = FALSE;
-                sprintf((char*) UART_tx_buffer[IMPORTANT_DATA], "!%.1f\t%.1f\0",
-                        selfBalancingRobot.robot_angle, selfBalancingRobot.pidHandle.pid_error);
                 HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[IMPORTANT_DATA], strlen((char*) UART_tx_buffer[IMPORTANT_DATA]), 100);
             }
             if (TRUE == selfBalancingRobot.send_non_important_data) {
                 selfBalancingRobot.send_non_important_data = FALSE;
-                sprintf((char*) UART_tx_buffer[NON_IMPORTANT_DATA], "\t%.1f\t%.1f\t%.1f\t%d\0",
-                        selfBalancingRobot.pidHandle.Kp, selfBalancingRobot.pidHandle.Ki, selfBalancingRobot.pidHandle.Kd, selfBalancingRobot.motorsHandle.motorsEnabled);
+
                 HAL_UART_Transmit(&huart1, (uint8_t*) UART_tx_buffer[NON_IMPORTANT_DATA], strlen((char*) UART_tx_buffer[NON_IMPORTANT_DATA]), 100);
             }
         }
@@ -167,6 +253,7 @@ void SystemClock_Config(void)
   {
     Error_Handler();
   }
+
   /** Initializes the CPU, AHB and APB buses clocks
   */
   RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
@@ -320,6 +407,8 @@ static void MX_USART1_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -347,10 +436,177 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
 /* USER CODE END 4 */
+
+/* USER CODE BEGIN Header_StartDefaultTask */
+/**
+  * @brief  Function implementing the defaultTask thread.
+  * @param  argument: Not used
+  * @retval None
+  */
+/* USER CODE END Header_StartDefaultTask */
+void StartDefaultTask(void const * argument)
+{
+  /* USER CODE BEGIN 5 */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END 5 */
+}
+
+/* USER CODE BEGIN Header_StartMpu6050Task */
+/**
+* @brief Function implementing the mpu6050Task thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartMpu6050Task */
+void StartMpu6050Task(void const * argument)
+{
+  /* USER CODE BEGIN StartMpu6050Task */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartMpu6050Task */
+}
+
+/* USER CODE BEGIN Header_StartPidControllerTask */
+/**
+* @brief Function implementing the pidCtrlTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartPidControllerTask */
+void StartPidControllerTask(void const * argument)
+{
+  /* USER CODE BEGIN StartPidControllerTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartPidControllerTask */
+}
+
+/* USER CODE BEGIN Header_StartSbrMasterTask */
+/**
+* @brief Function implementing the sbrMasterTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSbrMasterTask */
+void StartSbrMasterTask(void const * argument)
+{
+  /* USER CODE BEGIN StartSbrMasterTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartSbrMasterTask */
+}
+
+/* USER CODE BEGIN Header_StartDebugMessengerTask */
+/**
+* @brief Function implementing the debugMsgTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartDebugMessengerTask */
+void StartDebugMessengerTask(void const * argument)
+{
+  /* USER CODE BEGIN StartDebugMessengerTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartDebugMessengerTask */
+}
+
+/* USER CODE BEGIN Header_StartSbrCommandTask */
+/**
+* @brief Function implementing the sbrCmdTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartSbrCommandTask */
+void StartSbrCommandTask(void const * argument)
+{
+  /* USER CODE BEGIN StartSbrCommandTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartSbrCommandTask */
+}
+
+/* USER CODE BEGIN Header_StartMotorCtrlTask */
+/**
+* @brief Function implementing the motorCtrlTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartMotorCtrlTask */
+void StartMotorCtrlTask(void const * argument)
+{
+  /* USER CODE BEGIN StartMotorCtrlTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartMotorCtrlTask */
+}
+
+/* USER CODE BEGIN Header_StartLedTask */
+/**
+* @brief Function implementing the ledTask thread.
+* @param argument: Not used
+* @retval None
+*/
+/* USER CODE END Header_StartLedTask */
+void StartLedTask(void const * argument)
+{
+  /* USER CODE BEGIN StartLedTask */
+  /* Infinite loop */
+  for(;;)
+  {
+    osDelay(1);
+  }
+  /* USER CODE END StartLedTask */
+}
+
+/**
+  * @brief  Period elapsed callback in non blocking mode
+  * @note   This function is called  when TIM1 interrupt took place, inside
+  * HAL_TIM_IRQHandler(). It makes a direct call to HAL_IncTick() to increment
+  * a global variable "uwTick" used as application time base.
+  * @param  htim : TIM handle
+  * @retval None
+  */
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+{
+  /* USER CODE BEGIN Callback 0 */
+
+  /* USER CODE END Callback 0 */
+  if (htim->Instance == TIM1) {
+    HAL_IncTick();
+  }
+  /* USER CODE BEGIN Callback 1 */
+
+  /* USER CODE END Callback 1 */
+}
 
 /**
   * @brief  This function is executed in case of error occurrence.
@@ -380,5 +636,3 @@ void assert_failed(uint8_t *file, uint32_t line)
   /* USER CODE END 6 */
 }
 #endif /* USE_FULL_ASSERT */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

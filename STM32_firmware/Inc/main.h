@@ -74,6 +74,7 @@ void Error_Handler(void);
 #define IN3_GPIO_Port GPIOB
 #define IN4_Pin GPIO_PIN_15
 #define IN4_GPIO_Port GPIOB
+
 /* USER CODE BEGIN Private defines */
 #define IMPORTANT_DATA      (0u)
 #define NON_IMPORTANT_DATA  (1u)
@@ -87,5 +88,3 @@ void Error_Handler(void);
 #endif
 
 #endif /* __MAIN_H */
-
-/************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/
