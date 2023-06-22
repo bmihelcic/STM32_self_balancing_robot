@@ -15,8 +15,6 @@
  *
  ******************************************************************************/
 
-#include "../../bsp/inc/motor_control.h"
-#include "../../bsp/inc/mpu6050.h"
 #include "mcu.h"
 #include "cmsis_os.h"
 #include "sbr_pid_control.h"
@@ -24,6 +22,8 @@
 #include "sbr_log.h"
 #include "sbr_master.h"
 #include "sbr_led.h"
+#include "motor_control.h"
+#include "mpu6050.h"
 
 osThreadId defaultTaskHandle;
 uint32_t defaultTaskBuffer[128];
