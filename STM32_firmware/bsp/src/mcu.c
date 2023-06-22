@@ -32,6 +32,8 @@ void mcu_init()
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
 
+    SystemClock_Config();
+
     i2c_init();
     tim_init();
     usart_init();
@@ -41,8 +43,6 @@ void mcu_init()
     /* PendSV_IRQn interrupt configuration */
     HAL_NVIC_SetPriority(PendSV_IRQn, 15, 0);
 
-    __HAL_RCC_AFIO_CLK_ENABLE();
-    __HAL_RCC_PWR_CLK_ENABLE();
     __HAL_AFIO_REMAP_SWJ_NOJTAG();
 }
 /**
@@ -65,8 +65,6 @@ static void i2c_init(void)
     {
         while(1);
     }
-    /* I2C Peripheral clock enable */
-    __HAL_RCC_I2C1_CLK_ENABLE();
 }
 
 /**
@@ -117,8 +115,6 @@ static void tim_init(void)
     {
         while(1);
     }
-    /* Timer3 clock enable */
-    __HAL_RCC_TIM3_CLK_ENABLE();
 }
 
 /**
@@ -144,9 +140,6 @@ static void usart_init(void)
     /* USART1 interrupt init */
     HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
-
-    /* USART1 clock enable*/
-    __HAL_RCC_USART1_CLK_ENABLE();
 }
 
 /**
@@ -209,12 +202,6 @@ static void gpio_init(void)
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
-
-    /* GPIO Ports Clock Enable */
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_GPIOB_CLK_ENABLE();
-    __HAL_RCC_GPIOC_CLK_ENABLE();
-    __HAL_RCC_GPIOD_CLK_ENABLE();
 }
 
 /**
@@ -254,4 +241,19 @@ void SystemClock_Config(void)
     {
         while(1);
     }
+
+    /* I2C Peripheral clock enable */
+    __HAL_RCC_I2C1_CLK_ENABLE();
+    /* Timer3 clock enable */
+    __HAL_RCC_TIM3_CLK_ENABLE();
+    /* USART1 clock enable*/
+    __HAL_RCC_USART1_CLK_ENABLE();
+    /* GPIO Ports Clock Enable */
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_GPIOC_CLK_ENABLE();
+    __HAL_RCC_GPIOD_CLK_ENABLE();
+
+    __HAL_RCC_AFIO_CLK_ENABLE();
+    __HAL_RCC_PWR_CLK_ENABLE();
 }

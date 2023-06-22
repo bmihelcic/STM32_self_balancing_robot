@@ -14,7 +14,8 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
-
+#include "stm32f1xx_hal.h"
+#include "bsp_cfg.h"
 /**
  * @brief Function implementing the ledTask thread.
  * @param argument: Not used
@@ -24,6 +25,7 @@ void StartLedTask(void const *argument)
 {
     for (;;)
     {
-        osDelay(1);
+        HAL_GPIO_TogglePin(BLUEPILL_LED_Port, BLUEPILL_LED_Pin);
+        osDelay(500);
     }
 }
