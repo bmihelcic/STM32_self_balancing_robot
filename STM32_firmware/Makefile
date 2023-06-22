@@ -36,9 +36,19 @@ BUILD_DIR = build
 ######################################
 # C sources
 C_SOURCES =  \
-Src/main.c \
-Src/stm32f1xx_it.c \
-Src/stm32f1xx_hal_msp.c \
+app/src/freertos.c \
+app/src/main.c \
+app/src/sbr_command.c \
+app/src/sbr_led.c \
+app/src/sbr_log.c \
+app/src/sbr_master.c \
+app/src/sbr_pid_control.c \
+bsp/src/mcu.c \
+bsp/src/motor_control.c \
+bsp/src/mpu6050.c \
+bsp/src/stm32f1xx_hal_timebase.c \
+bsp/src/stm32f1xx_isr.c \
+bsp/src/system_stm32f1xx.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_gpio_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_i2c.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal.c \
@@ -54,13 +64,6 @@ Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 Drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
-Src/system_stm32f1xx.c \
-Src/MPU6050.c \
-Src/motors.c \
-Src/pid_control.c \
-Src/self_balancing_robot.c \
-Src/freertos.c \
-Src/stm32f1xx_hal_timebase_tim.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
 Middlewares/Third_Party/FreeRTOS/Source/list.c \
@@ -69,11 +72,12 @@ Middlewares/Third_Party/FreeRTOS/Source/stream_buffer.c \
 Middlewares/Third_Party/FreeRTOS/Source/tasks.c \
 Middlewares/Third_Party/FreeRTOS/Source/timers.c \
 Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3/port.c \
-Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c
+Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS/cmsis_os.c \
+lib/src/syscalls.c
 
 # ASM sources
 ASM_SOURCES =  \
-startup_stm32f103xb.s
+bsp/src/startup_stm32f103xb.s
 
 
 #######################################
@@ -126,7 +130,10 @@ AS_INCLUDES =
 
 # C includes
 C_INCLUDES =  \
--IInc \
+-Iapp/inc \
+-Iapp/config \
+-Ibsp/inc \
+-Ibsp/config \
 -IDrivers/STM32F1xx_HAL_Driver/Inc \
 -IDrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
 -IDrivers/CMSIS/Device/ST/STM32F1xx/Include \

@@ -1,21 +1,12 @@
 /*
- * conf.h
+ * app_cfg.h
  *
- *  Created on: Jun 26, 2021
- *      Author: branimir
+ *  Created on: Jun 22, 2023
+ *      Author: brane
  */
 
-#ifndef INC_CONF_H_
-#define INC_CONF_H_
-
-#define SET_POINT_DEVIATION         (0.0f)
-
-#define IMPORTANT_DATA_FREQ         (40)      // Send important data every 40 milliseconds
-#define NON_IMPORTANT_DATA_FREQ     (1000)    // Send non important data every 1 second
-#define PID_UPDATE_FREQ             (10)      // Update pid variables every 10ms
-
-#define INITIAL_UPRIGHT_ROBOT_ANGLE (84.7f)   // Robot angle at which it should stand upright
-#define NV_MEMORY_ADDRESS           (0x800F000)
+#ifndef APP_CONFIG_APP_CFG_H_
+#define APP_CONFIG_APP_CFG_H_
 
 #define COMMAND_SHUTDOWN            (0x2E)
 #define COMMAND_DO_NOTHING          (0x00)
@@ -35,4 +26,23 @@
 #define COMMAND_SET_POINT_PLUS      (0x51)
 #define COMMAND_SET_POINT_MINUS     (0x52)
 
-#endif /* INC_CONF_H_ */
+
+#define SET_POINT_DEVIATION         (0.0f)
+
+#define IMPORTANT_DATA_FREQ         (40)      // Send important data every 40 milliseconds
+#define NON_IMPORTANT_DATA_FREQ     (1000)    // Send non important data every 1 second
+#define PID_UPDATE_FREQ             (10)      // Update pid variables every 10ms
+
+#define INITIAL_UPRIGHT_ROBOT_ANGLE (84.7f)   // Robot angle at which it should stand upright
+#define NV_MEMORY_ADDRESS           (0x800F000)
+
+
+#define IMPORTANT_DATA      (0u)
+#define NON_IMPORTANT_DATA  (1u)
+
+#define TRUE    (1u)
+#define FALSE   (0u)
+
+
+
+#endif /* APP_CONFIG_APP_CFG_H_ */
