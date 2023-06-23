@@ -24,10 +24,8 @@
 #include "sbr_led.h"
 #include "motor_control.h"
 #include "mpu6050.h"
+#include "printf.h"
 
-osThreadId defaultTaskHandle;
-uint32_t defaultTaskBuffer[128];
-osStaticThreadDef_t defaultTaskControlBlock;
 osThreadId mpu6050TaskHandle;
 uint32_t mpu6050TaskBuffer[128];
 osStaticThreadDef_t mpu6050TaskControlBlock;
@@ -50,7 +48,6 @@ osThreadId ledTaskHandle;
 uint32_t ledTaskBuffer[128];
 osStaticThreadDef_t ledTaskControlBlock;
 
-void StartDefaultTask(void const *argument);
 
 /**
  * @brief  The application entry point.
@@ -61,61 +58,50 @@ int main(void)
     mcu_init();
 
     /* Create the thread(s) */
-    /* definition and creation of defaultTask */
-    osThreadStaticDef(defaultTask, StartDefaultTask, osPriorityLow, 0, 128,
-            defaultTaskBuffer, &defaultTaskControlBlock);
-    defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
-
+    printf("Creating mpu6050 task...\n");
     /* definition and creation of mpu6050Task */
     osThreadStaticDef(mpu6050Task, StartMpu6050Task, osPriorityHigh, 0, 128,
             mpu6050TaskBuffer, &mpu6050TaskControlBlock);
     mpu6050TaskHandle = osThreadCreate(osThread(mpu6050Task), NULL);
 
+    printf("Creating pid control task...\n");
     /* definition and creation of pidCtrlTask */
     osThreadStaticDef(pidCtrlTask, StartPidControllerTask, osPriorityHigh, 0,
             128, pidControllerTaBuffer, &pidControllerTaControlBlock);
     pidCtrlTaskHandle = osThreadCreate(osThread(pidCtrlTask), NULL);
 
+    printf("Creating sbr master task...\n");
     /* definition and creation of sbrMasterTask */
     osThreadStaticDef(sbrMasterTask, StartSbrMasterTask, osPriorityAboveNormal,
             0, 128, sbrMasterTaskBuffer, &sbrMasterTaskControlBlock);
     sbrMasterTaskHandle = osThreadCreate(osThread(sbrMasterTask), NULL);
 
-    /* definition and creation of debugMsgTask */
+    printf("Creating log task...\n");
+    /* definition and creation of logTask */
     osThreadStaticDef(logTask, StartLogTask, osPriorityLow, 0,
             128, logTaskBuffer, &logTaskControlBlock);
     logTaskHandle = osThreadCreate(osThread(logTask), NULL);
 
+    printf("Creating sbr command task...\n");
     /* definition and creation of sbrCmdTask */
     osThreadStaticDef(sbrCmdTask, StartSbrCommandTask, osPriorityLow, 0, 128,
             sbrCommandHandlBuffer, &sbrCommandHandlControlBlock);
     sbrCmdTaskHandle = osThreadCreate(osThread(sbrCmdTask), NULL);
 
+    printf("Creating motor control task...\n");
     /* definition and creation of motorCtrlTask */
     osThreadStaticDef(motorCtrlTask, StartMotorCtrlTask, osPriorityHigh, 0, 128,
             motorCtrlTaskBuffer, &motorCtrlTaskControlBlock);
     motorCtrlTaskHandle = osThreadCreate(osThread(motorCtrlTask), NULL);
 
+    printf("Creating led task...\n");
     /* definition and creation of ledTask */
     osThreadStaticDef(ledTask, StartLedTask, osPriorityLow, 0, 128,
             ledTaskBuffer, &ledTaskControlBlock);
     ledTaskHandle = osThreadCreate(osThread(ledTask), NULL);
 
     /* Start scheduler */
+    printf("Starting kernel!\n");
     osKernelStart();
     /* We should never get here as control is now taken by the scheduler */
-}
-
-/**
- * @brief  Function implementing the defaultTask thread.
- * @param  argument: Not used
- * @retval None
- */
-void StartDefaultTask(void const *argument)
-{
-    /* Infinite loop */
-    for (;;)
-    {
-        osDelay(1);
-    }
 }
