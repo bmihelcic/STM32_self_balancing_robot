@@ -20,10 +20,14 @@
 #include <math.h>
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
+#include "message_buffer.h"
+#include "sbr_log.h"
+#include "printf.h"
 
-#define I2C_TIMEOUT    (50u)
+#define I2C_TIMEOUT    (HAL_MAX_DELAY)
 
 extern I2C_HandleTypeDef hi2c1;
+extern MessageBufferHandle_t xMessageMPU6050SharedBuffer;
 
 void mpu6050_init(MPU6050_handle_S *mpu6050_handle_ptr,
         I2C_HandleTypeDef *i2c_handle_ptr);
@@ -32,7 +36,7 @@ static int16_t MPU6050_get_accel_x(MPU6050_handle_S*);
 static int16_t MPU6050_get_accel_y(MPU6050_handle_S*);
 static int16_t MPU6050_get_accel_z(MPU6050_handle_S*);
 static int16_t MPU6050_get_gyro_x(MPU6050_handle_S*);
-static int16_t MPU6050_get_gyro_Y(MPU6050_handle_S*);
+static int16_t MPU6050_get_gyro_y(MPU6050_handle_S*);
 static int16_t MPU6050_get_gyro_z(MPU6050_handle_S*);
 static void MPU6050_handler(MPU6050_handle_S *mpu6050_handle_ptr);
 inline static void mpu6050_calculate_gyro_factor(
@@ -46,15 +50,22 @@ inline static void mpu6050_calculate_gyro_factor(
 void StartMpu6050Task(void const *argument)
 {
     MPU6050_handle_S mpu6050_handle;
+    uint32_t prev_wake_time;
     const uint32_t delay_ms = (1000 / CONFIG_MPU6050_UPDATE_FREQ_HZ);
 
+    printf("Starting mpu6050 init\n");
     mpu6050_init(&mpu6050_handle, &hi2c1);
+    printf("Finished mpu6050 init\n");
 
-    /* Infinite loop */
+    prev_wake_time = osKernelSysTick();
+
     for (;;)
     {
         MPU6050_handler(&mpu6050_handle);
-        osDelay(delay_ms);
+        xMessageBufferSend(xMessageMPU6050SharedBuffer,
+                &mpu6050_handle.tx_log_message,
+                sizeof(mpu6050_handle.tx_log_message), 100);
+        osDelayUntil (&prev_wake_time, delay_ms);
     }
 }
 
@@ -81,7 +92,7 @@ void mpu6050_init(MPU6050_handle_S *mpu6050_handle_ptr,
     {
         mpu6050_handle_ptr->gyro_offset_x += MPU6050_get_gyro_x(
                 mpu6050_handle_ptr);
-        mpu6050_handle_ptr->gyro_offset_y += MPU6050_get_gyro_Y(
+        mpu6050_handle_ptr->gyro_offset_y += MPU6050_get_gyro_y(
                 mpu6050_handle_ptr);
         osDelay(5);
     }
@@ -121,7 +132,7 @@ static void MPU6050_handler(MPU6050_handle_S *mpu6050_handle_ptr)
 {
     mpu6050_handle_ptr->accel_x = MPU6050_get_accel_x(mpu6050_handle_ptr);
     mpu6050_handle_ptr->accel_z = MPU6050_get_accel_z(mpu6050_handle_ptr);
-    mpu6050_handle_ptr->gyro_y = MPU6050_get_gyro_Y(mpu6050_handle_ptr)
+    mpu6050_handle_ptr->gyro_y = MPU6050_get_gyro_y(mpu6050_handle_ptr)
             - mpu6050_handle_ptr->gyro_offset_y;
     mpu6050_handle_ptr->accel_angle = (atan2(
             (double) mpu6050_handle_ptr->accel_x,
@@ -147,6 +158,9 @@ static void MPU6050_handler(MPU6050_handle_S *mpu6050_handle_ptr)
     {
         mpu6050_handle_ptr->is_angle_critical = 0;
     }
+    mpu6050_handle_ptr->tx_log_message.gyro_angle = mpu6050_handle_ptr->gyro_angle;
+    mpu6050_handle_ptr->tx_log_message.accel_angle = mpu6050_handle_ptr->accel_angle;
+    mpu6050_handle_ptr->tx_log_message.angle_critical = mpu6050_handle_ptr->is_angle_critical;
 }
 
 static void MPU6050_set_reg(MPU6050_handle_S *mpu6050_handle_ptr, uint8_t reg,
@@ -201,7 +215,7 @@ static int16_t MPU6050_get_gyro_x(MPU6050_handle_S *mpu6050_handle_ptr)
     return ((gyro_x_buff[0] << 8) | gyro_x_buff[1]);
 }
 
-static int16_t MPU6050_get_gyro_Y(MPU6050_handle_S *mpu6050_handle_ptr)
+static int16_t MPU6050_get_gyro_y(MPU6050_handle_S *mpu6050_handle_ptr)
 {
     uint8_t reg[1] = { MPU6050_REG_GYRO_YOUT_H };
     uint8_t gyro_y_buff[2];

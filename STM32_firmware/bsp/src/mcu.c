@@ -26,6 +26,7 @@ static void i2c_init(void);
 static void tim_init(void);
 static void usart_init(void);
 static void gpio_init(void);
+static void SystemClock_Config(void);
 
 void mcu_init()
 {
@@ -208,7 +209,7 @@ static void gpio_init(void)
  * @brief System Clock Configuration
  * @retval None
  */
-void SystemClock_Config(void)
+static void SystemClock_Config(void)
 {
     RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
     RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
@@ -242,13 +243,13 @@ void SystemClock_Config(void)
         while(1);
     }
 
-    /* I2C Peripheral clock enable */
+    /* I2C clock enable */
     __HAL_RCC_I2C1_CLK_ENABLE();
     /* Timer3 clock enable */
     __HAL_RCC_TIM3_CLK_ENABLE();
     /* USART1 clock enable*/
     __HAL_RCC_USART1_CLK_ENABLE();
-    /* GPIO Ports Clock Enable */
+    /* GPIO Ports clock enable */
     __HAL_RCC_GPIOA_CLK_ENABLE();
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOC_CLK_ENABLE();

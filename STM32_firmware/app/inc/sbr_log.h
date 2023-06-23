@@ -18,6 +18,19 @@
 #ifndef APP_INC_SBR_LOG_H_
 #define APP_INC_SBR_LOG_H_
 
+#include "stm32f1xx_hal.h"
+
 void StartLogTask(void const *argument);
+
+typedef struct sbr_log_mpu6050_message_STRUCT {
+    float gyro_angle;
+    float accel_angle;
+    uint8_t angle_critical;
+} sbr_log_mpu6050_message_S;
+
+typedef struct sbr_log_handle_STRUCT {
+    UART_HandleTypeDef *uart_handle_ptr;
+
+} sbr_log_handle_S;
 
 #endif /* APP_INC_SBR_LOG_H_ */

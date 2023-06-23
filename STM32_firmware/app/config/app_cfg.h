@@ -44,5 +44,6 @@
 #define FALSE   (0u)
 
 
+#define CONFIG_MAIN_LOG_LEVEL     2    // 0 - all debug off, 1 - important debug on, 2 - all debug on
 
 #endif /* APP_CONFIG_APP_CFG_H_ */
