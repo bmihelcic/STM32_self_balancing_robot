@@ -29,6 +29,8 @@
 #include "imu.h"
 
 extern UART_HandleTypeDef huart1;
+extern osMutexId uart_mutex_id;
+
 static log_handle_S log_handle;
 
 static void log_init();

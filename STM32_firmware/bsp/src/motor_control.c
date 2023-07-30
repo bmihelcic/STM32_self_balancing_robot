@@ -15,14 +15,15 @@
  *
  ******************************************************************************/
 
-#include "../inc/motor_control.h"
+#include "cmsis_os.h"
+#include "motor_control.h"
 
 /**
- * @brief Function implementing the motorCtrlTask thread.
+ * @brief Function implementing the motor control thread.
  * @param argument: Not used
  * @retval None
  */
-void StartMotorCtrlTask(void const *argument)
+void MOTOR_CONTROL_Thread(void const *argument)
 {
     /* Infinite loop */
     for (;;)

@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : sbr_command.c
- * Description        : Self Balancing Robot commands handler source file
+ * File Name          : sbr_master.c
+ * Description        : Self Balancing Robot master source file
  ******************************************************************************
  * @attention
  *
@@ -14,15 +14,17 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
+#include "cmsis_os.h"
+
+extern osMessageQId pid_message_queue_id;
 
 /**
- * @brief Function implementing the sbrCmdTask thread.
+ * @brief Function implementing the master thread.
  * @param argument: Not used
  * @retval None
  */
-void StartSbrCommandTask(void const *argument)
+void MASTER_Thread(void const *argument)
 {
-    /* Infinite loop */
     for (;;)
     {
         osDelay(1);

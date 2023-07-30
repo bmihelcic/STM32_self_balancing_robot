@@ -33,7 +33,7 @@ int imu_calc_gyro_scale_factor(float *scale_factor);
 void IMU_Thread(void const *argument)
 {
 
-    const uint32_t delay_ms = (1000 / CFG_MPU6050_UPDATE_FREQ_HZ);
+    const uint32_t delay_ms = (1000 / CFG_IMU_FREQ_HZ);
     uint32_t os_delay_prev_wake_time;
 
     imu_init();
@@ -106,8 +106,8 @@ void imu_proccess_sensor_data()
     imu_handle.gyro_angle += ((float) gyro_y / imu_handle.gyro_val_change_factor);
     imu_handle.gyro_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
 
-    if ((imu_handle.gyro_angle < CFG_MPU6050_MIN_ANGLE)
-            || (imu_handle.gyro_angle > CFG_MPU6050_MAX_ANGLE)) {
+    if ((imu_handle.gyro_angle < CFG_IMU_MIN_ANGLE)
+            || (imu_handle.gyro_angle > CFG_IMU_MAX_ANGLE)) {
         imu_handle.is_angle_critical = 1;
     } else {
         imu_handle.is_angle_critical = 0;
@@ -127,19 +127,19 @@ int imu_calc_gyro_scale_factor(float *scale_factor)
         switch (MPU6050_Get_Gyro_Range())
         {
             case MPU6050_GYRO_RANGE_250DPS:
-                *scale_factor = 131.0f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 131.0f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_500DPS:
-                *scale_factor = 65.5f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 65.5f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_1000DPS:
-                *scale_factor = 32.8f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 32.8f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_2000DPS:
-                *scale_factor = 16.4f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 16.4f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             default:

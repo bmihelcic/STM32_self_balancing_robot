@@ -22,7 +22,7 @@ TARGET = STM32_self_balancing_robot
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -O0
+OPT = -O3
 
 
 #######################################
@@ -40,6 +40,8 @@ app/src/freertos.c \
 app/src/main.c \
 app/src/led.c \
 app/src/log.c \
+app/src/master.c \
+app/src/pid_control.c \
 bsp/src/mcu.c \
 bsp/src/imu.c \
 bsp/src/stm32f1xx_hal_timebase.c \
@@ -120,7 +122,7 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F103xB
+-DSTM32F103xB \
 
 
 # AS includes

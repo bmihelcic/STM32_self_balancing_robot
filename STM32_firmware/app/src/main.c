@@ -21,6 +21,7 @@
 #include "cmsis_os.h"
 #include "printf.h"
 #include "imu.h"
+#include "pid_control.h"
 
 osThreadId led_thread_id;
 uint32_t led_thread_buffer[128];
@@ -33,6 +34,10 @@ osStaticThreadDef_t log_thread_control_block;
 osThreadId imu_thread_id;
 uint32_t imu_thread_buffer[128];
 osStaticThreadDef_t imu_thread_control_block;
+
+osThreadId pid_thread_id;
+uint32_t pid_thread_buffer[128];
+osStaticThreadDef_t pid_thread_control_block;
 
 
 /**
@@ -54,6 +59,10 @@ int main(void)
     osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 0, 128,
             imu_thread_buffer, &imu_thread_control_block);
     imu_thread_id = osThreadCreate(osThread(IMU), NULL);
+
+    osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 0, 128,
+            pid_thread_buffer, &pid_thread_control_block);
+    pid_thread_id = osThreadCreate(osThread(PID), NULL);
 
 
    /* Start scheduler */

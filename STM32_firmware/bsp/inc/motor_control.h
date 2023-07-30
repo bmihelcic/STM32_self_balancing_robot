@@ -18,6 +18,6 @@
 #ifndef INC_MOTOR_CONTROL_H_
 #define INC_MOTOR_CONTROL_H_
 
-void StartMotorCtrlTask(void const *argument);
+void MOTOR_CONTROL_Thread(void const *argument)
 
 #endif /* INC_MOTOR_CONTROL_H_ */
