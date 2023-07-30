@@ -154,5 +154,6 @@ int16_t MPU6050_Read_Accel_Z();
 int16_t MPU6050_Read_Gyro_X();
 int16_t MPU6050_Read_Gyro_Y();
 int16_t MPU6050_Read_Gyro_Z();
+mpu6050_gyroscope_range_t MPU6050_Get_Gyro_Range();
 
 #endif /* INC_MPU6050_H_ */

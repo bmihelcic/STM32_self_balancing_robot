@@ -20,6 +20,7 @@
 #include "mcu.h"
 #include "cmsis_os.h"
 #include "printf.h"
+#include "imu.h"
 
 osThreadId led_thread_id;
 uint32_t led_thread_buffer[128];
@@ -28,6 +29,10 @@ osStaticThreadDef_t led_thread_control_block;
 osThreadId log_thread_id;
 uint32_t log_thread_buffer[128];
 osStaticThreadDef_t log_thread_control_block;
+
+osThreadId imu_thread_id;
+uint32_t imu_thread_buffer[128];
+osStaticThreadDef_t imu_thread_control_block;
 
 
 /**
@@ -45,6 +50,10 @@ int main(void)
     osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 0, 128,
             log_thread_buffer, &log_thread_control_block);
     log_thread_id = osThreadCreate(osThread(LOG), NULL);
+
+    osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 0, 128,
+            imu_thread_buffer, &imu_thread_control_block);
+    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
 
 
    /* Start scheduler */

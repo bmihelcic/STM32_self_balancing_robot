@@ -26,6 +26,7 @@
 #include "cmsis_os.h"
 #include "message_buffer.h"
 #include "printf.h"
+#include "imu.h"
 
 extern UART_HandleTypeDef huart1;
 static log_handle_S log_handle;
@@ -44,9 +45,9 @@ void LOG_Thread(void const *argument)
     if (1u == log_handle.is_initialized) {
         printf("log init success\n");
         while (1) {
-//            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
-//            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
-//            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
+            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
+            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
+            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
 
             printf("ga=%.2f aa=%.2f %d\n",
                    log_handle.tx_message.gyro_angle,

@@ -34,9 +34,9 @@
 #define IN4_Pin GPIO_PIN_15
 #define IN4_GPIO_Port GPIOB
 
-#define CONFIG_MPU6050_CALIBRATION_SAMPLES_NUM  (500)
-#define CONFIG_MPU6050_MAX_ANGLE                (125.0f)
-#define CONFIG_MPU6050_MIN_ANGLE                (65.0f)
-#define CONFIG_MPU6050_UPDATE_FREQ_HZ           (200)
+#define CFG_MPU6050_CALIBRATION_SAMPLES_NUM  (500)
+#define CFG_MPU6050_MAX_ANGLE                (125.0f)
+#define CFG_MPU6050_MIN_ANGLE                (65.0f)
+#define CFG_MPU6050_UPDATE_FREQ_HZ           (200)
 
 #endif /* BSP_CONFIG_BSP_CFG_H_ */

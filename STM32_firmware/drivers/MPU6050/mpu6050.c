@@ -161,6 +161,11 @@ int16_t MPU6050_Read_Gyro_Z()
     return ((gyro_z_buff[0] << 8) | gyro_z_buff[1]);
 }
 
+mpu6050_gyroscope_range_t MPU6050_Get_Gyro_Range()
+{
+    return mpu6050_handle.gyro_range;
+}
+
 static mpu6050_err_t mpu6050_set_reg(uint8_t reg, uint8_t data)
 {
     mpu6050_err_t ret_val;
