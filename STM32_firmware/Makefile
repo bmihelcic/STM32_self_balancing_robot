@@ -38,13 +38,8 @@ BUILD_DIR = build
 C_SOURCES =  \
 app/src/freertos.c \
 app/src/main.c \
-app/src/sbr_command.c \
-app/src/sbr_led.c \
-app/src/sbr_log.c \
-app/src/sbr_master.c \
-app/src/sbr_pid_control.c \
+app/src/led.c \
 bsp/src/mcu.c \
-bsp/src/motor_control.c \
 bsp/src/mpu6050.c \
 bsp/src/stm32f1xx_hal_timebase.c \
 bsp/src/stm32f1xx_isr.c \
