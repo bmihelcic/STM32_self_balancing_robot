@@ -59,6 +59,7 @@ drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_exti.c \
 drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim.c \
 drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_tim_ex.c \
 drivers/STM32F1xx_HAL_Driver/Src/stm32f1xx_hal_uart.c \
+drivers/MPU6050/mpu6050.c \
 Middlewares/Third_Party/FreeRTOS/Source/croutine.c \
 Middlewares/Third_Party/FreeRTOS/Source/event_groups.c \
 Middlewares/Third_Party/FreeRTOS/Source/list.c \
@@ -135,6 +136,7 @@ C_INCLUDES =  \
 -Idrivers/STM32F1xx_HAL_Driver/Inc/Legacy \
 -Idrivers/CMSIS/Device/ST/STM32F1xx/Include \
 -Idrivers/CMSIS/Include \
+-Idrivers/MPU6050 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/include \
 -IMiddlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM3 \
 -IMiddlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS

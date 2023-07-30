@@ -105,10 +105,17 @@
 #define MPU6050_REG_R_W                 0x74        /**< fifo read write data register */
 #define MPU6050_REG_WHO_AM_I            0x75        /**< who am I register */
 
+
+#define MPU6050_SENSITIVITY_SCALE_FACTOR_0  (131.0)   /* LSB/(deg/s) */
+#define MPU6050_SENSITIVITY_SCALE_FACTOR_1  (65.5)    /* LSB/(deg/s) */
+#define MPU6050_SENSITIVITY_SCALE_FACTOR_2  (32.8)    /* LSB/(deg/s) */
+#define MPU6050_SENSITIVITY_SCALE_FACTOR_3  (16.4)    /* LSB/(deg/s) */
+
 /**
  * @brief mpu6050 accelerometer range enumeration definition
  */
-typedef enum {
+typedef enum
+{
     MPU6050_ACCELEROMETER_RANGE_2G = 0x00, /**< ±2 g */
     MPU6050_ACCELEROMETER_RANGE_4G = 0x01, /**< ±4 g */
     MPU6050_ACCELEROMETER_RANGE_8G = 0x02, /**< ±8 g */
@@ -117,28 +124,35 @@ typedef enum {
 /**
  * @brief mpu6050 gyroscope range enumeration definition
  */
-typedef enum {
+typedef enum
+{
     MPU6050_GYRO_RANGE_250DPS = 0x00, /**< ±250 dps */
     MPU6050_GYRO_RANGE_500DPS = 0x01, /**< ±500 dps */
     MPU6050_GYRO_RANGE_1000DPS = 0x02, /**< ±1000 dps */
     MPU6050_GYRO_RANGE_2000DPS = 0x03, /**< ±2000 dps */
 } mpu6050_gyroscope_range_t;
 
-typedef struct MPU6050_handle_STRUCT {
+typedef enum
+{
+    MPU6050_ERR_OK = 0,
+    MPU6050_ERR_NOT_OK,
+    MPU6050_INIT_FAIL,
+    MPU6050_I2C_FAIL,
+} mpu6050_err_t;
+
+typedef struct MPU6050_handle_STRUCT
+{
     I2C_HandleTypeDef *i2c_handle_ptr;
-    int16_t accel_x;
-    int16_t accel_z;
-    int16_t gyro_y;
-    int32_t gyro_offset_x;
-    int32_t gyro_offset_y;
-    float accel_angle;
-    float gyro_angle;
     mpu6050_accelerometer_range_t accel_range;
     mpu6050_gyroscope_range_t gyro_range;
-    float gyro_val_change_factor;
-    uint8_t is_angle_critical;
 } MPU6050_handle_S;
 
-void StartMpu6050Task(void const *argument);
+mpu6050_err_t MPU6050_Init(I2C_HandleTypeDef *i2c_handle_ptr);
+int16_t MPU6050_Read_Accel_X();
+int16_t MPU6050_Read_Accel_Y();
+int16_t MPU6050_Read_Accel_Z();
+int16_t MPU6050_Read_Gyro_X();
+int16_t MPU6050_Read_Gyro_Y();
+int16_t MPU6050_Read_Gyro_Z();
 
 #endif /* INC_MPU6050_H_ */
