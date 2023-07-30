@@ -39,8 +39,8 @@ C_SOURCES =  \
 app/src/freertos.c \
 app/src/main.c \
 app/src/led.c \
+app/src/log.c \
 bsp/src/mcu.c \
-bsp/src/mpu6050.c \
 bsp/src/stm32f1xx_hal_timebase.c \
 bsp/src/stm32f1xx_isr.c \
 bsp/src/system_stm32f1xx.c \

@@ -15,13 +15,13 @@
  *
  ******************************************************************************/
 
+#include <log.h>
 #include "mpu6050.h"
 #include "bsp_cfg.h"
 #include <math.h>
 #include "stm32f1xx_hal.h"
 #include "cmsis_os.h"
 #include "message_buffer.h"
-#include "sbr_log.h"
 #include "printf.h"
 
 #define I2C_TIMEOUT    (HAL_MAX_DELAY)

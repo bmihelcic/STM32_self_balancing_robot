@@ -21,7 +21,8 @@
 
 #include "stm32f1xx_hal.h"
 #include "stdint.h"
-#include "sbr_log.h"
+
+#include "../../app/inc/log.h"
 
 #define MPU6050_ADDR  (0x68 << 1)
 /**
@@ -136,7 +137,6 @@ typedef struct MPU6050_handle_STRUCT {
     mpu6050_gyroscope_range_t gyro_range;
     float gyro_val_change_factor;
     uint8_t is_angle_critical;
-    sbr_log_mpu6050_message_S tx_log_message;
 } MPU6050_handle_S;
 
 void StartMpu6050Task(void const *argument);

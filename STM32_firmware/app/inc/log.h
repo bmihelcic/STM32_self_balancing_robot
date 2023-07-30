@@ -15,22 +15,24 @@
  *
  ******************************************************************************/
 
-#ifndef APP_INC_SBR_LOG_H_
-#define APP_INC_SBR_LOG_H_
+#ifndef APP_INC_LOG_H_
+#define APP_INC_LOG_H_
 
 #include "stm32f1xx_hal.h"
+#include "app_cfg.h"
 
-void StartLogTask(void const *argument);
+void LOG_Thread(void const *argument);
 
-typedef struct sbr_log_mpu6050_message_STRUCT {
+typedef struct {
     float gyro_angle;
     float accel_angle;
     uint8_t angle_critical;
-} sbr_log_mpu6050_message_S;
+} log_tx_message_S;
 
 typedef struct sbr_log_handle_STRUCT {
     UART_HandleTypeDef *uart_handle_ptr;
+    log_tx_message_S tx_message;
+    uint8_t is_initialized;
+} log_handle_S;
 
-} sbr_log_handle_S;
-
-#endif /* APP_INC_SBR_LOG_H_ */
+#endif /* APP_INC_LOG_H_ */

@@ -16,19 +16,18 @@
  ******************************************************************************/
 
 #include <led.h>
+#include <log.h>
 #include "mcu.h"
 #include "cmsis_os.h"
-#include "sbr_pid_control.h"
-#include "sbr_command.h"
-#include "sbr_log.h"
-#include "sbr_master.h"
-#include "motor_control.h"
-#include "mpu6050.h"
 #include "printf.h"
 
 osThreadId led_thread_id;
 uint32_t led_thread_buffer[128];
 osStaticThreadDef_t led_thread_control_block;
+
+osThreadId log_thread_id;
+uint32_t log_thread_buffer[128];
+osStaticThreadDef_t log_thread_control_block;
 
 
 /**
@@ -42,6 +41,10 @@ int main(void)
     osThreadStaticDef(LED, LED_Thread, osPriorityLow, 0, 128,
             led_thread_buffer, &led_thread_control_block);
     led_thread_id = osThreadCreate(osThread(LED), NULL);
+
+    osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 0, 128,
+            log_thread_buffer, &log_thread_control_block);
+    log_thread_id = osThreadCreate(osThread(LOG), NULL);
 
 
    /* Start scheduler */
