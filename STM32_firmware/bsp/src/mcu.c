@@ -141,6 +141,8 @@ static void usart_init(void)
     /* USART1 interrupt init */
     HAL_NVIC_SetPriority(USART1_IRQn, 5, 0);
     HAL_NVIC_EnableIRQ(USART1_IRQn);
+
+    __HAL_UART_ENABLE_IT(&huart1, UART_IT_RXNE);
 }
 
 /**

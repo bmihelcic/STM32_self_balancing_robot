@@ -48,7 +48,9 @@ void IMU_Thread(void const *argument)
         }
     } else {
         printf("imu init fail\n");
-        while (1);
+        while (1){
+            osDelay(1000);
+        }
     }
 }
 

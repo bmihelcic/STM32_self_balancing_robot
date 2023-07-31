@@ -19,14 +19,24 @@
 #include "command.h"
 #include "printf.h"
 #include "app_cfg.h"
+#include "stdint.h"
 
 extern UART_HandleTypeDef huart1;
 extern osMutexId uart_mutex_id;
 
+osMessageQId command_message_queue_id;
 command_handle_S command_handle;
 
+uint8_t command_message_queue_buffer[50];
+osStaticMessageQDef_t command_message_queue_cb;
+
+osMessageQStaticDef(command_message_queue,
+                    100,
+                    uint8_t,
+                    command_message_queue_buffer,
+                    &command_message_queue_cb);
+
 void command_init();
-pUART_CallbackTypeDef command_rx_callback(UART_HandleTypeDef *huart);
 
 /**
  * @brief Function implementing the command thread.
@@ -35,12 +45,20 @@ pUART_CallbackTypeDef command_rx_callback(UART_HandleTypeDef *huart);
  */
 void COMMAND_Thread(void const *argument)
 {
+    osEvent command_message_event;
+    uint8_t command;
+
     command_init();
 
     if (1u == command_handle.is_initialized) {
         printf("command init success\n");
         while (1) {
-            osDelay(1);
+            command_message_event = osMessageGet(command_message_queue_id,
+                                                 100);
+            if(osEventMessage == command_message_event.status) {
+                command = (uint8_t)command_message_event.value.v;
+            }
+            osDelay(10);
         }
     } else {
         printf("command init fail\n");
@@ -50,22 +68,27 @@ void COMMAND_Thread(void const *argument)
 
 void command_init()
 {
-    if (HAL_OK != HAL_UART_RegisterCallback(&huart1,
-                                            HAL_UART_RX_COMPLETE_CB_ID,
-                                            command_rx_callback)) {
+    command_message_queue_id = osMessageCreate(osMessageQ(command_message_queue),
+                                               osThreadGetId());
+
+    if (NULL == command_message_queue_id) {
         goto exitErr;
     }
 
     command_handle.is_initialized = 1u;
+    return;
 
 exitErr:
     command_handle.is_initialized = 0u;
+    return;
 }
 
-pUART_CallbackTypeDef command_rx_callback(UART_HandleTypeDef *huart)
+void COMMAND_Rx_Callback(UART_HandleTypeDef *huart)
 {
     volatile uint32_t received_command = COMMAND_DO_NOTHING;
     received_command = (huart->Instance->DR & 0xFF);
-    osMessagePut(command_message_queue_id, received_command, 0);
+    osMessagePut(command_message_queue_id,
+                 received_command,
+                 0);
 
 }

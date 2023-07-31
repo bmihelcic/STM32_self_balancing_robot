@@ -32,6 +32,7 @@
 #define IMPORTANT_DATA_FREQ         (40)      // Send important data every 40 milliseconds
 #define NON_IMPORTANT_DATA_FREQ     (1000)    // Send non important data every 1 second
 #define CFG_PID_CONTROL_FREQ_HZ     (100)     // Update pid variables every 10ms
+#define CFG_LOG_FREQ_MS             (10)
 
 #define INITIAL_UPRIGHT_ROBOT_ANGLE (84.7f)   // Robot angle at which it should stand upright
 #define NV_MEMORY_ADDRESS           (0x800F000)

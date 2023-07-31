@@ -17,11 +17,20 @@
 #ifndef APP_INC_COMMAND_H_
 #define APP_INC_COMMAND_H_
 
+#include "stm32f1xx_hal.h"
+
 typedef struct
 {
     uint8_t is_initialized;
 } command_handle_S;
 
-void StartSbrCommandTask(void const *argument);
+typedef struct
+{
+    uint8_t rx_command;
+} command_message_S;
+
+
+void COMMAND_Thread(void const *argument);
+void COMMAND_Rx_Callback(UART_HandleTypeDef *huart);
 
 #endif /* APP_INC_COMMAND_H_ */

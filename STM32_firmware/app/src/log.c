@@ -27,6 +27,7 @@
 #include "message_buffer.h"
 #include "printf.h"
 #include "imu.h"
+#include "app_cfg.h"
 
 extern UART_HandleTypeDef huart1;
 extern osMutexId uart_mutex_id;
@@ -42,10 +43,13 @@ static void log_init();
  */
 void LOG_Thread(void const *argument)
 {
+    uint32_t os_delay_prev_wake_time;
+
     log_init();
 
     if (1u == log_handle.is_initialized) {
         printf("log init success\n");
+        os_delay_prev_wake_time = osKernelSysTick();
         while (1) {
             log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
             log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
@@ -55,7 +59,8 @@ void LOG_Thread(void const *argument)
                    log_handle.tx_message.gyro_angle,
                    log_handle.tx_message.accel_angle,
                    log_handle.tx_message.angle_critical);
-            osDelay(10);
+            osDelayUntil(&os_delay_prev_wake_time,
+                         CFG_LOG_FREQ_MS);
         }
     } else {
         printf("log init fail\n");
@@ -77,6 +82,9 @@ static void log_init()
 /* Low level function for printing a char. Needed for printf() */
 void _putchar(char character)
 {
-    HAL_UART_Transmit(&huart1, (uint8_t*) &character, sizeof(character), 100);
+    HAL_UART_Transmit(&huart1,
+                      (uint8_t*) &character,
+                      sizeof(character),
+                      100);
 }
 

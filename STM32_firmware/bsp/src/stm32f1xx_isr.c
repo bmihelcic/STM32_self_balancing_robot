@@ -15,8 +15,9 @@
  *
  *******************************************************************************/
 
-#include "../inc/stm32f1xx_isr.h"
+#include "stm32f1xx_isr.h"
 #include "stm32f1xx_hal.h"
+#include "command.h"
 
 extern TIM_HandleTypeDef htim1;
 extern UART_HandleTypeDef huart1;
@@ -104,6 +105,7 @@ void TIM1_UP_IRQHandler(void)
  */
 void USART1_IRQHandler(void)
 {
+    COMMAND_Rx_Callback(&huart1);
     HAL_UART_IRQHandler(&huart1);
 }
 
