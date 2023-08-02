@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : sbr_led.c
- * Description        : Self Balancing Robot LEDs handler source file
+ * File Name          : bsp.h
+ * Description        : microcontroller specifics header file
  ******************************************************************************
  * @attention
  *
@@ -14,19 +14,10 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
-#include "stm32f1xx_hal.h"
-#include "cmsis_os.h"
-#include "bsp_cfg.h"
-/**
- * @brief Function implementing led thread.
- * @param argument: Not used
- * @retval None
- */
-void LED_Thread(void const *argument)
-{
-    for (;;)
-    {
-//        HAL_GPIO_TogglePin(BLUEPILL_LED_Port, BLUEPILL_LED_Pin);
-        osDelay(500);
-    }
-}
+
+#ifndef INC_BSP_H_
+#define INC_BSP_H_
+
+void BSP_Init();
+
+#endif /* INC_BSP_H_ */

@@ -32,6 +32,7 @@ typedef struct {
 typedef struct sbr_log_handle_STRUCT {
     UART_HandleTypeDef *uart_handle_ptr;
     log_tx_message_S tx_message;
+    uint8_t log_enabled;
     uint8_t is_initialized;
 } log_handle_S;
 

@@ -17,6 +17,7 @@
 
 #include "stm32f1xx_hal.h"
 #include "bsp_cfg.h"
+#include "motor_control.h"
 
 I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim3;
@@ -28,7 +29,7 @@ static void usart_init(void);
 static void gpio_init(void);
 static void SystemClock_Config(void);
 
-void mcu_init()
+void BSP_Init()
 {
     /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
     HAL_Init();
@@ -39,6 +40,8 @@ void mcu_init()
     tim_init();
     usart_init();
     gpio_init();
+
+    MOTORS_Init();
 
     /* System interrupt init*/
     /* PendSV_IRQn interrupt configuration */

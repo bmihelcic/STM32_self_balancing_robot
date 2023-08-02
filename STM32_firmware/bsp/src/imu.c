@@ -32,8 +32,6 @@ int imu_calc_gyro_scale_factor(float *scale_factor);
 
 void IMU_Thread(void const *argument)
 {
-
-    const uint32_t delay_ms = (1000 / CFG_IMU_FREQ_HZ);
     uint32_t os_delay_prev_wake_time;
 
     imu_init();
@@ -44,7 +42,7 @@ void IMU_Thread(void const *argument)
         printf("imu init success\n");
         while (1) {
             imu_proccess_sensor_data();
-            osDelayUntil(&os_delay_prev_wake_time, delay_ms);
+            osDelayUntil(&os_delay_prev_wake_time, CFG_IMU_FREQ_MS);
         }
     } else {
         printf("imu init fail\n");
@@ -106,10 +104,10 @@ void imu_proccess_sensor_data()
     }
 
     imu_handle.gyro_angle += ((float) gyro_y / imu_handle.gyro_val_change_factor);
-    imu_handle.gyro_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
+    imu_handle.robot_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
 
-    if ((imu_handle.gyro_angle < CFG_IMU_MIN_ANGLE)
-            || (imu_handle.gyro_angle > CFG_IMU_MAX_ANGLE)) {
+    if ((imu_handle.robot_angle < CFG_IMU_MIN_ANGLE)
+            || (imu_handle.robot_angle > CFG_IMU_MAX_ANGLE)) {
         imu_handle.is_angle_critical = 1;
     } else {
         imu_handle.is_angle_critical = 0;

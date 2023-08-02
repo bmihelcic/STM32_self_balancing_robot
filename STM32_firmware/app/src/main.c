@@ -15,14 +15,16 @@
  *
  ******************************************************************************/
 
-#include <led.h>
-#include <log.h>
-#include "mcu.h"
+#include "bsp.h"
+#include "led.h"
+#include "log.h"
 #include "cmsis_os.h"
 #include "printf.h"
 #include "imu.h"
 #include "pid_control.h"
 #include "command.h"
+#include "os_resources.h"
+#include "master.h"
 
 osThreadId led_thread_id;
 uint32_t led_thread_buffer[128];
@@ -44,16 +46,22 @@ osThreadId command_thread_id;
 uint32_t command_thread_buffer[128];
 osStaticThreadDef_t command_thread_control_block;
 
-osThreadStaticDef(LED, LED_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
-        led_thread_buffer, &led_thread_control_block);
-osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
-        log_thread_buffer, &log_thread_control_block);
-osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
-        imu_thread_buffer, &imu_thread_control_block);
-osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
-        pid_thread_buffer, &pid_thread_control_block);
+osThreadId master_thread_id;
+uint32_t master_thread_buffer[128];
+osStaticThreadDef_t master_thread_control_block;
+
+//osThreadStaticDef(LED, LED_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
+//        led_thread_buffer, &led_thread_control_block);
+//osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
+//        log_thread_buffer, &log_thread_control_block);
+//osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+//        imu_thread_buffer, &imu_thread_control_block);
+//osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+//        pid_thread_buffer, &pid_thread_control_block);
 osThreadStaticDef(COMMAND, COMMAND_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
         command_thread_buffer, &command_thread_control_block);
+osThreadStaticDef(MASTER, MASTER_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+        master_thread_buffer, &master_thread_control_block);
 
 
 /**
@@ -62,13 +70,17 @@ osThreadStaticDef(COMMAND, COMMAND_Thread, osPriorityAboveNormal, 0, configMINIM
  */
 int main(void)
 {
-    mcu_init();
+    BSP_Init();
 
-    led_thread_id = osThreadCreate(osThread(LED), NULL);
-    log_thread_id = osThreadCreate(osThread(LOG), NULL);
-    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
-    pid_thread_id = osThreadCreate(osThread(PID), NULL);
+    /* Initialize application queues, mutexes, semaphores, ... */
+    OS_RESOURCES_Init();
+
+//    led_thread_id = osThreadCreate(osThread(LED), NULL);
+//    log_thread_id = osThreadCreate(osThread(LOG), NULL);
+//    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
+//    pid_thread_id = osThreadCreate(osThread(PID), NULL);
     command_thread_id = osThreadCreate(osThread(COMMAND), NULL);
+    master_thread_id = osThreadCreate(osThread(MASTER), NULL);
 
    /* Start scheduler */
     osKernelStart();

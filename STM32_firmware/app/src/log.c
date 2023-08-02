@@ -64,19 +64,22 @@ void LOG_Thread(void const *argument)
         }
     } else {
         printf("log init fail\n");
-        while (1);
+        while (1){
+            osDelay(1000);
+        }
     }
 }
 
 static void log_init()
 {
     log_handle.uart_handle_ptr = &huart1;
+    log_handle.log_enabled = 1u;
 
-    if (NULL != log_handle.uart_handle_ptr) {
-        log_handle.is_initialized = 1u;
-    } else {
-        log_handle.is_initialized = 0u;
-    }
+//    if (NULL != log_handle.uart_handle_ptr) {
+//        log_handle.is_initialized = 1u;
+//    } else {
+//        log_handle.is_initialized = 0u;
+//    }
 }
 
 /* Low level function for printing a char. Needed for printf() */

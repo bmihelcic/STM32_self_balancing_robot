@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : mcu.h
- * Description        : microcontroller specifics header file
+ * File Name          : os_resources.h
+ * Description        : OS resources header file.
  ******************************************************************************
  * @attention
  *
@@ -14,10 +14,16 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
+#ifndef APP_INC_OS_RESOURCES_H_
+#define APP_INC_OS_RESOURCES_H_
 
-#ifndef INC_MCU_H_
-#define INC_MCU_H_
+#include "cmsis_os.h"
 
-void mcu_init();
+extern QueueHandle_t master_rx_message_buffer_handle;
+extern QueueHandle_t command_rx_message_buffer_handle;
+extern QueueHandle_t pid_rx_message_buffer_handle;
+extern QueueHandle_t log_rx_message_buffer_handle;
 
-#endif /* INC_MCU_H_ */
+int OS_RESOURCES_Init();
+
+#endif /* APP_INC_OS_RESOURCES_H_ */

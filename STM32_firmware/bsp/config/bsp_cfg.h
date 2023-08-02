@@ -36,8 +36,9 @@
 
 #define CFG_MPU6050_CALIBRATION_SAMPLES_NUM  (500)
 
-#define CFG_IMU_FREQ_HZ (200)
-#define CFG_IMU_MAX_ANGLE (125.0f)
-#define CFG_IMU_MIN_ANGLE (65.0f)
+/* IMU configuration */
+#define CFG_IMU_FREQ_MS          (5)         // Run IMU module every 5ms
+#define CFG_IMU_MAX_ANGLE        (125.0f)
+#define CFG_IMU_MIN_ANGLE        (65.0f)
 
 #endif /* BSP_CONFIG_BSP_CFG_H_ */

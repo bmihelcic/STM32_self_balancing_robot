@@ -15,8 +15,15 @@
  *
  ******************************************************************************/
 #include "cmsis_os.h"
+#include "master.h"
+#include "os_resources.h"
+#include "app_cfg.h"
+#include "message_buffer.h"
 
-extern osMessageQId pid_message_queue_id;
+static master_handle_s master_handle;
+
+static void master_init();
+static void master_parse_rx_message(master_rx_message_t *msg);
 
 /**
  * @brief Function implementing the master thread.
@@ -25,8 +32,62 @@ extern osMessageQId pid_message_queue_id;
  */
 void MASTER_Thread(void const *argument)
 {
-    for (;;)
+    uint32_t os_delay_prev_wake_time;
+    master_rx_message_t rx_message;
+
+    master_init();
+
+    if (1u == master_handle.is_initialized) {
+
+        os_delay_prev_wake_time = osKernelSysTick();
+
+        while (1) {
+            if (0 != xMessageBufferReceive(master_rx_message_buffer_handle,
+                                           &rx_message,
+                                           sizeof(rx_message),
+                                           100)) {
+                master_parse_rx_message(&rx_message);
+            }
+
+            osDelayUntil(&os_delay_prev_wake_time,
+                         CFG_MASTER_FREQ_MS);
+        }
+    } else {
+        while (1) {
+            osDelay(100);
+        }
+    }
+}
+
+static void master_init()
+{
+    master_handle.is_initialized = 1u;
+}
+
+static void master_parse_rx_message(master_rx_message_t *msg)
+{
+    switch (msg->id)
     {
-        osDelay(1);
+        case COMMAND_ID:
+            switch (msg->data.command)
+            {
+                case COMMAND_MASTER_START_STOP:
+                    master_handle.master_start_stop = !master_handle.master_start_stop;
+                    break;
+                case COMMAND_MASTER_ANGLE_SET_POINT_PLUS:
+                    master_handle.robot_angle_set_point += 0.5f;
+                    break;
+                case COMMAND_MASTER_ANGLE_SET_POINT_MINUS:
+                    master_handle.robot_angle_set_point -= 0.5f;
+                    break;
+                default:
+                    break;
+            }
+
+            break;
+        case PID_ID:
+            break;
+        default:
+            break;
     }
 }

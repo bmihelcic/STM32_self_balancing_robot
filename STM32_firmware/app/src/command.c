@@ -20,23 +20,18 @@
 #include "printf.h"
 #include "app_cfg.h"
 #include "stdint.h"
+#include "master.h"
+#include "app_cfg.h"
+#include "os_resources.h"
+#include "pid_control.h"
+#include "message_buffer.h"
 
 extern UART_HandleTypeDef huart1;
-extern osMutexId uart_mutex_id;
 
-osMessageQId command_message_queue_id;
 command_handle_S command_handle;
 
-uint8_t command_message_queue_buffer[50];
-osStaticMessageQDef_t command_message_queue_cb;
-
-osMessageQStaticDef(command_message_queue,
-                    100,
-                    uint8_t,
-                    command_message_queue_buffer,
-                    &command_message_queue_cb);
-
-void command_init();
+static void command_init();
+static void command_handler(uint8_t rx_command);
 
 /**
  * @brief Function implementing the command thread.
@@ -45,50 +40,83 @@ void command_init();
  */
 void COMMAND_Thread(void const *argument)
 {
-    osEvent command_message_event;
-    uint8_t command;
+    uint8_t received_command;
 
     command_init();
 
     if (1u == command_handle.is_initialized) {
         printf("command init success\n");
         while (1) {
-            command_message_event = osMessageGet(command_message_queue_id,
-                                                 100);
-            if(osEventMessage == command_message_event.status) {
-                command = (uint8_t)command_message_event.value.v;
+            if (0 != xMessageBufferReceive(command_rx_message_buffer_handle,
+                                           &received_command,
+                                           sizeof(received_command),
+                                           100)) {
+                command_handler(received_command);
             }
-            osDelay(10);
+            osDelay(50);
         }
     } else {
         printf("command init fail\n");
-        while (1);
+        while (1) {
+            osDelay(1000);
+        }
     }
-}
-
-void command_init()
-{
-    command_message_queue_id = osMessageCreate(osMessageQ(command_message_queue),
-                                               osThreadGetId());
-
-    if (NULL == command_message_queue_id) {
-        goto exitErr;
-    }
-
-    command_handle.is_initialized = 1u;
-    return;
-
-exitErr:
-    command_handle.is_initialized = 0u;
-    return;
 }
 
 void COMMAND_Rx_Callback(UART_HandleTypeDef *huart)
 {
-    volatile uint32_t received_command = COMMAND_DO_NOTHING;
+    uint8_t received_command = COMMAND_DO_NOTHING;
     received_command = (huart->Instance->DR & 0xFF);
-    osMessagePut(command_message_queue_id,
-                 received_command,
-                 0);
+    xMessageBufferSendFromISR(command_rx_message_buffer_handle,
+                              &received_command,
+                              sizeof(received_command),
+                              NULL);
 
 }
+
+static void command_init()
+{
+    command_handle.is_initialized = 1u;
+    return;
+}
+
+static void command_handler(uint8_t rx_command)
+{
+    master_rx_message_t master_message = { .id = COMMAND_ID, };
+    pid_rx_message_t pid_message = { .id = COMMAND_ID, };
+
+    switch (rx_command)
+    {
+        case COMMAND_MASTER_START_STOP:
+        case COMMAND_MASTER_ANGLE_SET_POINT_PLUS:
+        case COMMAND_MASTER_ANGLE_SET_POINT_MINUS:
+            master_message.data.command = rx_command;
+            xMessageBufferSend(master_rx_message_buffer_handle,
+                               &master_message,
+                               sizeof(master_message),
+                               10);
+            break;
+        case COMMAND_PID_RAISE_P:
+        case COMMAND_PID_LOWER_P:
+        case COMMAND_PID_RAISE_I:
+        case COMMAND_PID_LOWER_I:
+        case COMMAND_PID_RAISE_D:
+        case COMMAND_PID_LOWER_D:
+        case COMMAND_PID_RAISE_P10:
+        case COMMAND_PID_RAISE_I1:
+        case COMMAND_PID_RAISE_D10:
+        case COMMAND_PID_LOWER_P10:
+        case COMMAND_PID_LOWER_I1:
+        case COMMAND_PID_LOWER_D10:
+            pid_message.data.command = rx_command;
+            xQueueSend(pid_rx_message_buffer_handle,
+                       &pid_message,
+                       10);
+            break;
+        case COMMAND_LOG_ON_OFF:
+            break;
+        default:
+            break;
+    }
+}
+

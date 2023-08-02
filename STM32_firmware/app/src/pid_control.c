@@ -21,11 +21,7 @@
 
 #define PID_ZERO  (0)
 
-static uint8_t pid_message_queue_buffer[50];
-static osStaticMessageQDef_t pid_message_queue_cb;
 static pid_handle_S pid_handle;
-static osMessageQStaticDef(pid_message_queue, 10, sizeof(pid_message_t), pid_message_queue_buffer, &pid_message_queue_cb);
-osMessageQId pid_message_queue_id;
 
 void pid_init();
 void pid_control_process(float set_point, float process_variable);
@@ -38,7 +34,6 @@ void pid_control_message_listener();
  */
 void PID_CONTROL_Thread(void const *argument)
 {
-    const uint32_t delay_ms = (1000 / CFG_PID_CONTROL_FREQ_HZ);
     uint32_t os_delay_prev_wake_time;
 
     pid_init();
@@ -48,8 +43,10 @@ void PID_CONTROL_Thread(void const *argument)
         printf("pid control init success\n");
         while (1) {
             pid_control_message_listener();
-            pid_control_process(pid_handle.set_point, pid_handle.process_variable);
-            osDelayUntil(&os_delay_prev_wake_time, delay_ms);
+            pid_control_process(pid_handle.set_point,
+                                pid_handle.process_variable);
+            osDelayUntil(&os_delay_prev_wake_time,
+                         CFG_PID_CONTROL_FREQ_MS);
         }
     } else {
         printf("pid control init fail\n");
@@ -62,14 +59,7 @@ void pid_init()
     pid_handle.Kp = 100.0f;
     pid_handle.Ki = 50.0f;
     pid_handle.Kd = 70.0f;
-
-    pid_message_queue_id = osMessageCreate(osMessageQ(pid_message_queue), osThreadGetId());
-
-    if (NULL != pid_message_queue_id) {
-        pid_handle.is_initialized = 1u;
-    } else {
-        pid_handle.is_initialized = 0u;
-    }
+    pid_handle.is_initialized = 1u;
 }
 
 void pid_control_process(float set_point, float process_variable)
@@ -87,8 +77,7 @@ void pid_control_process(float set_point, float process_variable)
         pid_handle.pid_p = CFG_PID_KP_LOW_LIMIT;
     }
     /* calculate i of pid if error is small */
-    if ((pid_handle.pid_error > -2) && (pid_handle.pid_error < 2)
-            && (pid_handle.pid_error != PID_ZERO)) {
+    if ((pid_handle.pid_error > -2) && (pid_handle.pid_error < 2) && (pid_handle.pid_error != PID_ZERO)) {
         pid_handle.pid_i = pid_handle.pid_i + pid_handle.Ki * pid_handle.pid_error;
     } else {
         pid_handle.pid_i = PID_ZERO;
@@ -100,8 +89,7 @@ void pid_control_process(float set_point, float process_variable)
         pid_handle.pid_i = CFG_PID_KI_HIGH_LIMIT;
     }
     /* calculate d of pid */
-    pid_handle.pid_d = pid_handle.Kd * (pid_handle.pid_error - pid_handle.pid_error_prev)
-            / pid_handle.time_delta;
+    pid_handle.pid_d = pid_handle.Kd * (pid_handle.pid_error - pid_handle.pid_error_prev) / pid_handle.time_delta;
     /* limit d of pid */
     if (pid_handle.pid_d < CFG_PID_KD_LOW_LIMIT) {
         pid_handle.pid_d = CFG_PID_KD_LOW_LIMIT;
@@ -122,11 +110,12 @@ void pid_control_process(float set_point, float process_variable)
 void pid_control_message_listener()
 {
     osEvent pid_message_queue_event;
-    pid_message_t *pid_message_ptr;
+    pid_rx_message_t *pid_message_ptr;
 
-    pid_message_queue_event = osMessageGet(pid_message_queue_id, 0);
+    pid_message_queue_event = osMessageGet(pid_rx_message_buffer_handle,
+                                           0);
     if (osEventMessage == pid_message_queue_event.status) {
-        pid_message_ptr = (pid_message_t*) pid_message_queue_event.value.p;
+        pid_message_ptr = (pid_message_t*) pid_rx_message_queue_event.value.p;
         pid_handle.set_point = pid_message_ptr->rx_set_point;
         pid_handle.process_variable = pid_message_ptr->rx_current_point;
     }

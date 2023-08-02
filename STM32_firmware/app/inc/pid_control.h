@@ -24,6 +24,7 @@ void StartPidControllerTask(void const *argument);
 
 #include <stdint.h>
 #include "stm32f1xx_hal.h"
+#include "app_cfg.h"
 
 typedef struct
 {
@@ -46,9 +47,14 @@ typedef struct
 
 typedef struct
 {
-    float rx_set_point;
-    float rx_current_point;
-} pid_message_t;
+    module_id_t id;
+    union
+    {
+        uint8_t command;
+        float imu_robot_angle;
+        float master_angle_set_point;
+    } data;
+} pid_rx_message_t;
 
 void PID_CONTROL_Thread(void const *argument);
 
