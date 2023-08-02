@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : sbr_command.c
- * Description        : Self Balancing Robot commands handler source file
+ * File Name          : bsp.h
+ * Description        : microcontroller specifics header file
  ******************************************************************************
  * @attention
  *
@@ -15,16 +15,9 @@
  *
  ******************************************************************************/
 
-/**
- * @brief Function implementing the sbrCmdTask thread.
- * @param argument: Not used
- * @retval None
- */
-void StartSbrCommandTask(void const *argument)
-{
-    /* Infinite loop */
-    for (;;)
-    {
-        osDelay(1);
-    }
-}
+#ifndef INC_BSP_H_
+#define INC_BSP_H_
+
+void BSP_Init();
+
+#endif /* INC_BSP_H_ */

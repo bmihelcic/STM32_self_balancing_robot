@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : sbr_pid_control.c
- * Description        : PID controller source file
+ * File Name          : sbr_command.c
+ * Description        : Self Balancing Robot commands header file
  ******************************************************************************
  * @attention
  *
@@ -14,16 +14,22 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
+#ifndef APP_INC_COMMAND_H_
+#define APP_INC_COMMAND_H_
 
-/**
- * @brief Function implementing the pidCtrlTask thread.
- * @param argument: Not used
- * @retval None
- */
-void StartPidControllerTask(void const *argument)
+#include "stm32f1xx_hal.h"
+
+typedef struct
 {
-    for (;;)
-    {
-        osDelay(1);
-    }
-}
+    uint8_t is_initialized;
+} command_handle_S;
+
+typedef struct
+{
+    uint8_t rx_command;
+} command_message_S;
+
+
+void COMMAND_Thread(void const *argument);
+
+#endif /* APP_INC_COMMAND_H_ */

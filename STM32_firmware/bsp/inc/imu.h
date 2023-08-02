@@ -25,6 +25,7 @@ typedef struct
     int32_t gyro_offset_y;
     float accel_angle;
     float gyro_angle;
+    float robot_angle;
     float gyro_val_change_factor;
     uint8_t is_angle_critical;
     uint8_t is_initialized;

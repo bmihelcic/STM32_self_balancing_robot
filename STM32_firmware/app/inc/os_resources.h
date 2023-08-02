@@ -1,7 +1,7 @@
 /**
  ******************************************************************************
- * File Name          : sbr_log.c
- * Description        : Self Balancing Robot logging module header file
+ * File Name          : os_resources.h
+ * Description        : OS resources header file.
  ******************************************************************************
  * @attention
  *
@@ -14,26 +14,23 @@
  *                        opensource.org/licenses/BSD-3-Clause
  *
  ******************************************************************************/
+#ifndef APP_INC_OS_RESOURCES_H_
+#define APP_INC_OS_RESOURCES_H_
 
-#ifndef APP_INC_LOG_H_
-#define APP_INC_LOG_H_
-
+#include "cmsis_os.h"
 #include "stm32f1xx_hal.h"
-#include "app_cfg.h"
 
-void LOG_Thread(void const *argument);
+extern QueueHandle_t master_rx_message_buffer_handle;
+extern QueueHandle_t command_rx_message_buffer_handle;
+extern QueueHandle_t pid_rx_message_buffer_handle;
+extern QueueHandle_t log_rx_message_buffer_handle;
+extern SemaphoreHandle_t uart_mutex;
+extern uint8_t uart_tx_buffer[100];
 
-typedef struct {
-    float gyro_angle;
-    float accel_angle;
-    uint8_t angle_critical;
-} log_tx_message_S;
+extern I2C_HandleTypeDef hi2c1;
+extern TIM_HandleTypeDef htim3;
+extern UART_HandleTypeDef huart1;
 
-typedef struct sbr_log_handle_STRUCT {
-    UART_HandleTypeDef *uart_handle_ptr;
-    log_tx_message_S tx_message;
-    uint8_t log_enabled;
-    uint8_t is_initialized;
-} log_handle_S;
+int OS_RESOURCES_Init();
 
-#endif /* APP_INC_LOG_H_ */
+#endif /* APP_INC_OS_RESOURCES_H_ */

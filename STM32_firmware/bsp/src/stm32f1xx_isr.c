@@ -15,8 +15,9 @@
  *
  *******************************************************************************/
 
-#include "../inc/stm32f1xx_isr.h"
+#include "stm32f1xx_isr.h"
 #include "stm32f1xx_hal.h"
+#include "command.h"
 
 extern TIM_HandleTypeDef htim1;
 extern UART_HandleTypeDef huart1;

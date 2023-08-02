@@ -18,6 +18,11 @@
 #ifndef INC_MOTOR_CONTROL_H_
 #define INC_MOTOR_CONTROL_H_
 
-void StartMotorCtrlTask(void const *argument);
+#include "stdint.h"
+
+void MOTORS_Init();
+void MOTORS_Turn_Clockwise(uint16_t v);
+void MOTORS_Turn_Counter_Clockwise(uint16_t v);
+void MOTORS_Power_Off();
 
 #endif /* INC_MOTOR_CONTROL_H_ */

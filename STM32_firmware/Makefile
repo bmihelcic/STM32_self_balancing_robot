@@ -38,10 +38,13 @@ BUILD_DIR = build
 C_SOURCES =  \
 app/src/freertos.c \
 app/src/main.c \
-app/src/led.c \
+app/src/master.c \
 app/src/log.c \
-bsp/src/mcu.c \
-bsp/src/imu.c \
+app/src/led.c \
+app/src/command.c \
+app/src/os_resources.c \
+bsp/src/bsp.c \
+bsp/src/motor_control.c \
 bsp/src/stm32f1xx_hal_timebase.c \
 bsp/src/stm32f1xx_isr.c \
 bsp/src/system_stm32f1xx.c \
@@ -120,7 +123,7 @@ AS_DEFS =
 # C defines
 C_DEFS =  \
 -DUSE_HAL_DRIVER \
--DSTM32F103xB
+-DSTM32F103xB \
 
 
 # AS includes

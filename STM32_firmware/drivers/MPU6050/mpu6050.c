@@ -18,7 +18,7 @@
 #include "mpu6050.h"
 #include "stm32f1xx_hal.h"
 
-#define I2C_TIMEOUT    (HAL_MAX_DELAY)
+#define I2C_TIMEOUT    (2000)
 
 static MPU6050_handle_S mpu6050_handle;
 
@@ -52,8 +52,6 @@ mpu6050_err_t MPU6050_Init(I2C_HandleTypeDef *i2c_handle_ptr)
     mpu6050_handle.gyro_range = MPU6050_GYRO_RANGE_250DPS;
 
     ret_val = MPU6050_ERR_OK;
-
-    return ret_val;
 
 exit:
     return ret_val;

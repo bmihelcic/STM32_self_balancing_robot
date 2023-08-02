@@ -32,8 +32,6 @@ int imu_calc_gyro_scale_factor(float *scale_factor);
 
 void IMU_Thread(void const *argument)
 {
-
-    const uint32_t delay_ms = (1000 / CFG_MPU6050_UPDATE_FREQ_HZ);
     uint32_t os_delay_prev_wake_time;
 
     imu_init();
@@ -41,14 +39,26 @@ void IMU_Thread(void const *argument)
     os_delay_prev_wake_time = osKernelSysTick();
 
     if (1u == imu_handle.is_initialized) {
-        printf("imu init success\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            printf("imu init success\n");
+            xSemaphoreGive(uart_mutex);
+        }
+
         while (1) {
             imu_proccess_sensor_data();
-            osDelayUntil(&os_delay_prev_wake_time, delay_ms);
+            osDelayUntil(&os_delay_prev_wake_time,
+                         CFG_IMU_FREQ_MS);
         }
     } else {
-        printf("imu init fail\n");
-        while (1);
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            printf("imu init fail\n");
+            xSemaphoreGive(uart_mutex);
+        }
+        while (1) {
+            osDelay(1000);
+        }
     }
 }
 
@@ -97,17 +107,15 @@ void imu_proccess_sensor_data()
     imu_handle.accel_angle = (atan2((double) accel_x,
                                     -(double) accel_z) * (180.0f / M_PI));
 
-    if ((1 == imu_handle.is_angle_critical) && (imu_handle.accel_angle > 70.0f)
-            && (imu_handle.accel_angle < 120.0f)) {
+    if ((1 == imu_handle.is_angle_critical) && (imu_handle.accel_angle > 70.0f) && (imu_handle.accel_angle < 120.0f)) {
         imu_handle.is_angle_critical = 0;
         imu_handle.gyro_angle = imu_handle.accel_angle;
     }
 
     imu_handle.gyro_angle += ((float) gyro_y / imu_handle.gyro_val_change_factor);
-    imu_handle.gyro_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
+    imu_handle.robot_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
 
-    if ((imu_handle.gyro_angle < CFG_MPU6050_MIN_ANGLE)
-            || (imu_handle.gyro_angle > CFG_MPU6050_MAX_ANGLE)) {
+    if ((imu_handle.robot_angle < CFG_IMU_MIN_ANGLE) || (imu_handle.robot_angle > CFG_IMU_MAX_ANGLE)) {
         imu_handle.is_angle_critical = 1;
     } else {
         imu_handle.is_angle_critical = 0;
@@ -127,19 +135,19 @@ int imu_calc_gyro_scale_factor(float *scale_factor)
         switch (MPU6050_Get_Gyro_Range())
         {
             case MPU6050_GYRO_RANGE_250DPS:
-                *scale_factor = 131.0f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 131.0f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_500DPS:
-                *scale_factor = 65.5f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 65.5f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_1000DPS:
-                *scale_factor = 32.8f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 32.8f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             case MPU6050_GYRO_RANGE_2000DPS:
-                *scale_factor = 16.4f * CFG_MPU6050_UPDATE_FREQ_HZ;
+                *scale_factor = 16.4f * CFG_IMU_FREQ_HZ;
                 ret_val = 0;
                 break;
             default:
