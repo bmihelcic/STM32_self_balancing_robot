@@ -32,8 +32,5 @@ typedef struct
 } imu_handle_S;
 
 void IMU_Thread(void const *argument);
-float IMU_Get_Gyro_Angle();
-float IMU_Get_Accel_Angle();
-uint8_t IMU_Is_Angle_Critical();
 
 #endif /* APP_INC_IMU_H_ */

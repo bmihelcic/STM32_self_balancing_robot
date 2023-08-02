@@ -25,10 +25,11 @@
 
 static pid_handle_S pid_handle;
 
-void pid_init();
-void pid_control_process(float set_point, float process_variable);
-void pid_control_rx_message_listener();
+static void pid_init();
+static void pid_control_loop();
+static void pid_rx_message_listener();
 static void pid_parse_rx_message(pid_rx_message_t *msg);
+static void pid_update_log_message();
 
 /**
  * @brief Function implementing the pid control thread.
@@ -52,9 +53,9 @@ void PID_CONTROL_Thread(void const *argument)
         }
 
         while (1) {
-            pid_control_rx_message_listener();
-            pid_control_process(pid_handle.set_point,
-                                pid_handle.process_variable);
+            pid_rx_message_listener();
+            pid_control_loop();
+            pid_update_log_message();
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_PID_CONTROL_FREQ_MS);
         }
@@ -68,20 +69,21 @@ void PID_CONTROL_Thread(void const *argument)
     }
 }
 
-void pid_init()
+static void pid_init()
 {
     pid_handle.Kp = 100.0f;
     pid_handle.Ki = 50.0f;
     pid_handle.Kd = 70.0f;
+    pid_handle.set_point = CFG_INITIAL_UPRIGHT_ROBOT_ANGLE;
     pid_handle.is_initialized = 1u;
 }
 
-void pid_control_process(float set_point, float process_variable)
+static void pid_control_loop()
 {
     pid_handle.time_stamp = osKernelSysTick();
     pid_handle.time_delta = pid_handle.time_stamp - pid_handle.time_stamp_prev;
 
-    pid_handle.pid_error = set_point - process_variable;
+    pid_handle.pid_error = pid_handle.set_point - pid_handle.process_variable;
     /* calculate p of pid */
     pid_handle.pid_p = pid_handle.Kp * pid_handle.pid_error;
     /* limit p */
@@ -121,7 +123,7 @@ void pid_control_process(float set_point, float process_variable)
     pid_handle.time_stamp_prev = pid_handle.time_stamp;
 }
 
-void pid_control_rx_message_listener()
+static void pid_rx_message_listener()
 {
     pid_rx_message_t rx_message;
 
@@ -130,6 +132,24 @@ void pid_control_rx_message_listener()
                                    sizeof(rx_message),
                                    0)) {
         pid_parse_rx_message(&rx_message);
+    }
+}
+
+static void pid_update_log_message()
+{
+    log_rx_message_t log_message;
+
+    log_message.id = PID_ID;
+    log_message.data.pid.pid_error = pid_handle.pid_error;
+    log_message.data.pid.pid_total = pid_handle.pid_total;
+
+    if (pdTRUE == xSemaphoreTake(log_message_buffer_mutex,
+                                 10)) {
+        xMessageBufferSend(log_rx_message_buffer_handle,
+                           &log_message,
+                           sizeof(log_message),
+                           10);
+        xSemaphoreGive(log_message_buffer_mutex);
     }
 }
 

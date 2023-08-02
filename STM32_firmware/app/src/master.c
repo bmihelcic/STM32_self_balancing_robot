@@ -21,11 +21,13 @@
 #include "message_buffer.h"
 #include "stdio.h"
 #include "log.h"
+#include "pid_control.h"
 
 static master_handle_s master_handle;
 
 static void master_init();
 static void master_parse_rx_message(master_rx_message_t *msg);
+static void master_send_set_point_to_pid();
 
 /**
  * @brief Function implementing the master thread.
@@ -74,6 +76,7 @@ void MASTER_Thread(void const *argument)
 
 static void master_init()
 {
+    master_handle.robot_angle_set_point = CFG_INITIAL_UPRIGHT_ROBOT_ANGLE;
     master_handle.is_initialized = 1u;
 }
 
@@ -89,9 +92,11 @@ static void master_parse_rx_message(master_rx_message_t *msg)
                     break;
                 case COMMAND_MASTER_ANGLE_SET_POINT_PLUS:
                     master_handle.robot_angle_set_point += 0.5f;
+                    master_send_set_point_to_pid();
                     break;
                 case COMMAND_MASTER_ANGLE_SET_POINT_MINUS:
                     master_handle.robot_angle_set_point -= 0.5f;
+                    master_send_set_point_to_pid();
                     break;
                 default:
                     break;
@@ -102,5 +107,22 @@ static void master_parse_rx_message(master_rx_message_t *msg)
             break;
         default:
             break;
+    }
+}
+
+static void master_send_set_point_to_pid()
+{
+    pid_rx_message_t pid_message;
+
+    pid_message.id = MASTER_ID;
+    pid_message.data.master_angle_set_point = master_handle.robot_angle_set_point;
+
+    if (pdTRUE == xSemaphoreTake(pid_message_buffer_mutex,
+                                 10)) {
+        xMessageBufferSend(pid_rx_message_buffer_handle,
+                           &pid_message,
+                           sizeof(pid_message),
+                           10);
+        xSemaphoreGive(pid_message_buffer_mutex);
     }
 }

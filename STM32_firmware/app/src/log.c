@@ -36,8 +36,9 @@ extern osMutexId uart_mutex_id;
 static log_handle_S log_handle;
 
 static void log_init();
-static void log_check_rx_message();
+static void log_check_rx_message_buffer();
 static void log_parse_rx_message(log_rx_message_t *msg);
+static void log_send_tx_message();
 
 /**
  * @brief Function implementing log thread.
@@ -47,7 +48,6 @@ static void log_parse_rx_message(log_rx_message_t *msg);
 void LOG_Thread(void const *argument)
 {
     uint32_t os_delay_prev_wake_time;
-    char tx_buff[50];
 
     log_init();
 
@@ -60,19 +60,13 @@ void LOG_Thread(void const *argument)
 
         os_delay_prev_wake_time = osKernelSysTick();
         while (1) {
-            log_check_rx_message();
+
             if (1 == log_handle.log_enabled) {
-                log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
-                log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
-                log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
+                log_check_rx_message_buffer();
+
                 if (pdTRUE == xSemaphoreTake(uart_mutex,
                                              portMAX_DELAY)) {
-                    sprintf(tx_buff,
-                            "ga=%.2f aa=%.2f %d\n",
-                            log_handle.tx_message.gyro_angle,
-                            log_handle.tx_message.accel_angle,
-                            log_handle.tx_message.angle_critical);
-                    LOG_Transmit_Blocking(tx_buff);
+                    log_send_tx_message();
                     xSemaphoreGive(uart_mutex);
                 }
             }
@@ -115,7 +109,7 @@ static void log_init()
     }
 }
 
-static void log_check_rx_message()
+static void log_check_rx_message_buffer()
 {
     log_rx_message_t rx_message;
 
@@ -140,12 +134,27 @@ static void log_parse_rx_message(log_rx_message_t *msg)
 
             break;
         case IMU_ID:
-
+            log_handle.tx_message.imu_accel_angle = msg->data.imu.imu_accel_angle;
+            log_handle.tx_message.imu_gyro_angle = msg->data.imu.imu_gyro_angle;
             break;
         case PID_ID:
-
+            log_handle.tx_message.pid_error = msg->data.pid.pid_error;
+            log_handle.tx_message.pid_total = msg->data.pid.pid_total;
             break;
         default:
             break;
     }
+}
+
+static void log_send_tx_message()
+{
+    char tx_buff[50];
+
+    sprintf(tx_buff,
+            "%.2f %.2f %.2f %.2f\n",
+            log_handle.tx_message.imu_gyro_angle,
+            log_handle.tx_message.imu_accel_angle,
+            log_handle.tx_message.pid_error,
+            log_handle.tx_message.pid_total);
+    LOG_Transmit_Blocking(tx_buff);
 }

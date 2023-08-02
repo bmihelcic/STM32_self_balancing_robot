@@ -22,7 +22,7 @@ TARGET = STM32_self_balancing_robot
 # debug build?
 DEBUG = 1
 # optimization
-OPT = -O0
+OPT = -O3
 
 
 #######################################

@@ -121,10 +121,14 @@ static void command_handler(uint8_t rx_command)
         case COMMAND_MASTER_ANGLE_SET_POINT_PLUS:
         case COMMAND_MASTER_ANGLE_SET_POINT_MINUS:
             master_message.data.command = rx_command;
-            xMessageBufferSend(master_rx_message_buffer_handle,
-                               &master_message,
-                               sizeof(master_message),
-                               10);
+            if (pdTRUE == xSemaphoreTake(master_message_buffer_mutex,
+                                         10)) {
+                xMessageBufferSend(master_rx_message_buffer_handle,
+                                   &master_message,
+                                   sizeof(master_message),
+                                   10);
+                xSemaphoreGive(master_message_buffer_mutex);
+            }
             break;
         case COMMAND_PID_RAISE_P:
         case COMMAND_PID_LOWER_P:
@@ -139,17 +143,25 @@ static void command_handler(uint8_t rx_command)
         case COMMAND_PID_LOWER_I1:
         case COMMAND_PID_LOWER_D10:
             pid_message.data.command = rx_command;
-            xMessageBufferSend(pid_rx_message_buffer_handle,
-                       &pid_message,
-                       sizeof(pid_message),
-                       10);
+            if (pdTRUE == xSemaphoreTake(pid_message_buffer_mutex,
+                                         10)) {
+                xMessageBufferSend(pid_rx_message_buffer_handle,
+                                   &pid_message,
+                                   sizeof(pid_message),
+                                   10);
+                xSemaphoreGive(pid_message_buffer_mutex);
+            }
             break;
         case COMMAND_LOG_ON_OFF:
             log_message.data.command = rx_command;
-            xMessageBufferSend(log_rx_message_buffer_handle,
-                       &log_message,
-                       sizeof(log_message),
-                       10);
+            if (pdTRUE == xSemaphoreTake(log_message_buffer_mutex,
+                                         10)) {
+                xMessageBufferSend(log_rx_message_buffer_handle,
+                                   &log_message,
+                                   sizeof(log_message),
+                                   10);
+                xSemaphoreGive(log_message_buffer_mutex);
+            }
             break;
         default:
             break;

@@ -23,27 +23,37 @@
 
 void LOG_Thread(void const *argument);
 
-typedef struct {
-    float gyro_angle;
-    float accel_angle;
-    uint8_t angle_critical;
-} log_tx_message_S;
+typedef struct
+{
+    float pid_total;
+    float pid_error;
+    float imu_gyro_angle;
+    float imu_accel_angle;
+} log_tx_message_t;
 
-typedef struct {
+typedef struct
+{
     module_id_t id;
     union
     {
         uint8_t command;
-        float pid_total;
-        float pid_error;
-        float imu_gyro_angle;
-        float imu_accel_angle;
+        struct
+        {
+            float pid_total;
+            float pid_error;
+        } pid;
+        struct
+        {
+            float imu_gyro_angle;
+            float imu_accel_angle;
+        } imu;
     } data;
 } log_rx_message_t;
 
-typedef struct sbr_log_handle_STRUCT {
+typedef struct sbr_log_handle_STRUCT
+{
     UART_HandleTypeDef *uart_handle_ptr;
-    log_tx_message_S tx_message;
+    log_tx_message_t tx_message;
     uint8_t log_enabled;
     uint8_t is_initialized;
 } log_handle_S;

@@ -25,6 +25,9 @@ extern QueueHandle_t command_rx_message_buffer_handle;
 extern QueueHandle_t pid_rx_message_buffer_handle;
 extern QueueHandle_t log_rx_message_buffer_handle;
 extern SemaphoreHandle_t uart_mutex;
+extern SemaphoreHandle_t log_message_buffer_mutex;
+extern SemaphoreHandle_t pid_message_buffer_mutex;
+extern SemaphoreHandle_t master_message_buffer_mutex;
 extern char uart_tx_buffer[CFG_UART_TX_BUFFER_SIZE];
 
 extern I2C_HandleTypeDef hi2c1;

@@ -35,7 +35,7 @@
 #define CFG_MASTER_FREQ_MS                  (10)         // Master module run frequency in ms
 
 /* LOG configuration*/
-#define CFG_LOG_FREQ_MS                     (50)         // Log module run frequency in ms
+#define CFG_LOG_FREQ_MS                     (1)         // Log module run frequency in ms
 
 /* PID configuration */
 #define CFG_PID_CONTROL_FREQ_MS             (5)          // Pid module run frequency in ms

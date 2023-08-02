@@ -23,6 +23,8 @@
 #include "mpu6050.h"
 #include <math.h>
 #include "os_resources.h"
+#include "app_cfg.h"
+#include "pid_control.h"
 
 extern I2C_HandleTypeDef hi2c1;
 static imu_handle_S imu_handle;
@@ -30,6 +32,8 @@ static imu_handle_S imu_handle;
 void imu_init();
 void imu_proccess_sensor_data();
 int imu_calc_gyro_scale_factor(float *scale_factor);
+static void imu_send_angle_to_pid_control();
+static void imu_update_log_message();
 
 void IMU_Thread(void const *argument)
 {
@@ -48,6 +52,8 @@ void IMU_Thread(void const *argument)
 
         while (1) {
             imu_proccess_sensor_data();
+            imu_send_angle_to_pid_control();
+            imu_update_log_message();
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_IMU_FREQ_MS);
         }
@@ -61,21 +67,6 @@ void IMU_Thread(void const *argument)
             osDelay(1000);
         }
     }
-}
-
-float IMU_Get_Gyro_Angle()
-{
-    return imu_handle.gyro_angle;
-}
-
-float IMU_Get_Accel_Angle()
-{
-    return imu_handle.accel_angle;
-}
-
-uint8_t IMU_Is_Angle_Critical()
-{
-    return imu_handle.is_angle_critical;
 }
 
 void imu_init()
@@ -160,3 +151,37 @@ int imu_calc_gyro_scale_factor(float *scale_factor)
     return ret_val;
 }
 
+static void imu_send_angle_to_pid_control()
+{
+    pid_rx_message_t pid_message;
+
+    pid_message.id = IMU_ID;
+    pid_message.data.imu_robot_angle = imu_handle.robot_angle;
+
+    if (pdTRUE == xSemaphoreTake(pid_message_buffer_mutex,
+                                 10)) {
+        xMessageBufferSend(pid_rx_message_buffer_handle,
+                           &pid_message,
+                           sizeof(pid_message),
+                           20);
+        xSemaphoreGive(pid_message_buffer_mutex);
+    }
+}
+
+static void imu_update_log_message()
+{
+    log_rx_message_t log_message;
+
+    log_message.id = IMU_ID;
+    log_message.data.imu.imu_accel_angle = imu_handle.accel_angle;
+    log_message.data.imu.imu_gyro_angle = imu_handle.gyro_angle;
+
+    if (pdTRUE == xSemaphoreTake(log_message_buffer_mutex,
+                                 10)) {
+        xMessageBufferSend(log_rx_message_buffer_handle,
+                           &log_message,
+                           sizeof(log_message),
+                           10);
+        xSemaphoreGive(log_message_buffer_mutex);
+    }
+}

@@ -26,6 +26,9 @@ MessageBufferHandle_t command_rx_message_buffer_handle;
 MessageBufferHandle_t pid_rx_message_buffer_handle;
 MessageBufferHandle_t log_rx_message_buffer_handle;
 SemaphoreHandle_t uart_mutex;
+SemaphoreHandle_t log_message_buffer_mutex;
+SemaphoreHandle_t pid_message_buffer_mutex;
+SemaphoreHandle_t master_message_buffer_mutex;
 
 static uint8_t master_rx_message_queue_buffer[50];
 static uint8_t command_rx_message_queue_buffer[50];
@@ -38,6 +41,10 @@ static StaticMessageBuffer_t pid_rx_message_struct;
 static StaticMessageBuffer_t log_rx_message_struct;
 
 StaticSemaphore_t uart_mutex_buffer;
+StaticSemaphore_t log_message_buffer_mutex_buffer;
+StaticSemaphore_t pid_message_buffer_mutex_buffer;
+StaticSemaphore_t  master_message_buffer_mutex_buffer;
+
 char uart_tx_buffer[CFG_UART_TX_BUFFER_SIZE];
 
 static void os_resources_error_hook();
@@ -75,6 +82,21 @@ int OS_RESOURCES_Init()
 
     uart_mutex = xSemaphoreCreateMutexStatic(&uart_mutex_buffer);
     if (NULL == uart_mutex) {
+        os_resources_error_hook();
+    }
+
+    log_message_buffer_mutex = xSemaphoreCreateMutexStatic(&log_message_buffer_mutex_buffer);
+    if (NULL == log_message_buffer_mutex) {
+        os_resources_error_hook();
+    }
+
+    pid_message_buffer_mutex = xSemaphoreCreateMutexStatic(&pid_message_buffer_mutex_buffer);
+    if (NULL == pid_message_buffer_mutex) {
+        os_resources_error_hook();
+    }
+
+    master_message_buffer_mutex = xSemaphoreCreateMutexStatic(&master_message_buffer_mutex_buffer);
+    if (NULL == master_message_buffer_mutex) {
         os_resources_error_hook();
     }
 
