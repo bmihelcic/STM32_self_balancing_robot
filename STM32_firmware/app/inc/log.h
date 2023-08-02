@@ -27,8 +27,7 @@ typedef struct
 {
     float pid_total;
     float pid_error;
-    float imu_gyro_angle;
-    float imu_accel_angle;
+    float imu_robot_angle;
 } log_tx_message_t;
 
 typedef struct
@@ -44,8 +43,7 @@ typedef struct
         } pid;
         struct
         {
-            float imu_gyro_angle;
-            float imu_accel_angle;
+            float imu_robot_angle;
         } imu;
     } data;
 } log_rx_message_t;

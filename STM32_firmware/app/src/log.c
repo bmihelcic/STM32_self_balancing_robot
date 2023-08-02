@@ -134,8 +134,7 @@ static void log_parse_rx_message(log_rx_message_t *msg)
 
             break;
         case IMU_ID:
-            log_handle.tx_message.imu_accel_angle = msg->data.imu.imu_accel_angle;
-            log_handle.tx_message.imu_gyro_angle = msg->data.imu.imu_gyro_angle;
+            log_handle.tx_message.imu_robot_angle = msg->data.imu.imu_robot_angle;
             break;
         case PID_ID:
             log_handle.tx_message.pid_error = msg->data.pid.pid_error;
@@ -151,9 +150,8 @@ static void log_send_tx_message()
     char tx_buff[50];
 
     sprintf(tx_buff,
-            "%.2f %.2f %.2f %.2f\n",
-            log_handle.tx_message.imu_gyro_angle,
-            log_handle.tx_message.imu_accel_angle,
+            "ra%.2f\t%.2f\t%.2f\t",
+            log_handle.tx_message.imu_robot_angle,
             log_handle.tx_message.pid_error,
             log_handle.tx_message.pid_total);
     LOG_Transmit_Blocking(tx_buff);

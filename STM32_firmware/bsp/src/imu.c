@@ -173,8 +173,7 @@ static void imu_update_log_message()
     log_rx_message_t log_message;
 
     log_message.id = IMU_ID;
-    log_message.data.imu.imu_accel_angle = imu_handle.accel_angle;
-    log_message.data.imu.imu_gyro_angle = imu_handle.gyro_angle;
+    log_message.data.imu.imu_robot_angle = imu_handle.robot_angle;
 
     if (pdTRUE == xSemaphoreTake(log_message_buffer_mutex,
                                  10)) {
