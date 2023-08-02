@@ -29,6 +29,18 @@ typedef struct {
     uint8_t angle_critical;
 } log_tx_message_S;
 
+typedef struct {
+    module_id_t id;
+    union
+    {
+        uint8_t command;
+        float pid_total;
+        float pid_error;
+        float imu_gyro_angle;
+        float imu_accel_angle;
+    } data;
+} log_rx_message_t;
+
 typedef struct sbr_log_handle_STRUCT {
     UART_HandleTypeDef *uart_handle_ptr;
     log_tx_message_S tx_message;

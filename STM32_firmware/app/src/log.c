@@ -36,6 +36,8 @@ extern osMutexId uart_mutex_id;
 static log_handle_S log_handle;
 
 static void log_init();
+static void log_check_rx_message();
+static void log_parse_rx_message(log_rx_message_t *msg);
 
 /**
  * @brief Function implementing log thread.
@@ -58,18 +60,21 @@ void LOG_Thread(void const *argument)
 
         os_delay_prev_wake_time = osKernelSysTick();
         while (1) {
-            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
-            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
-            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
-            if (pdTRUE == xSemaphoreTake(uart_mutex,
-                                         portMAX_DELAY)) {
-                sprintf(tx_buff,
-                        "ga=%.2f aa=%.2f %d\n",
-                        log_handle.tx_message.gyro_angle,
-                        log_handle.tx_message.accel_angle,
-                        log_handle.tx_message.angle_critical);
-                LOG_Transmit_Blocking(tx_buff);
-                xSemaphoreGive(uart_mutex);
+            log_check_rx_message();
+            if (1 == log_handle.log_enabled) {
+                log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
+                log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
+                log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
+                if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                             portMAX_DELAY)) {
+                    sprintf(tx_buff,
+                            "ga=%.2f aa=%.2f %d\n",
+                            log_handle.tx_message.gyro_angle,
+                            log_handle.tx_message.accel_angle,
+                            log_handle.tx_message.angle_critical);
+                    LOG_Transmit_Blocking(tx_buff);
+                    xSemaphoreGive(uart_mutex);
+                }
             }
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_LOG_FREQ_MS);
@@ -110,3 +115,37 @@ static void log_init()
     }
 }
 
+static void log_check_rx_message()
+{
+    log_rx_message_t rx_message;
+
+    if (0 != xMessageBufferReceive(log_rx_message_buffer_handle,
+                                   &rx_message,
+                                   sizeof(rx_message),
+                                   10)) {
+        log_parse_rx_message(&rx_message);
+    }
+}
+
+static void log_parse_rx_message(log_rx_message_t *msg)
+{
+    switch (msg->id)
+    {
+        case COMMAND_ID:
+            switch (msg->data.command)
+            {
+                case COMMAND_LOG_ON_OFF:
+                    log_handle.log_enabled = !log_handle.log_enabled;
+            }
+
+            break;
+        case IMU_ID:
+
+            break;
+        case PID_ID:
+
+            break;
+        default:
+            break;
+    }
+}

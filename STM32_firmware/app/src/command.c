@@ -113,6 +113,7 @@ static void command_handler(uint8_t rx_command)
 {
     master_rx_message_t master_message = { .id = COMMAND_ID, };
     pid_rx_message_t pid_message = { .id = COMMAND_ID, };
+    log_rx_message_t log_message = { .id = COMMAND_ID };
 
     switch (rx_command)
     {
@@ -138,11 +139,17 @@ static void command_handler(uint8_t rx_command)
         case COMMAND_PID_LOWER_I1:
         case COMMAND_PID_LOWER_D10:
             pid_message.data.command = rx_command;
-            xQueueSend(pid_rx_message_buffer_handle,
+            xMessageBufferSend(pid_rx_message_buffer_handle,
                        &pid_message,
+                       sizeof(pid_message),
                        10);
             break;
         case COMMAND_LOG_ON_OFF:
+            log_message.data.command = rx_command;
+            xMessageBufferSend(log_rx_message_buffer_handle,
+                       &log_message,
+                       sizeof(log_message),
+                       10);
             break;
         default:
             break;

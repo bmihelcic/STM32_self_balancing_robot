@@ -66,6 +66,13 @@ int OS_RESOURCES_Init()
         os_resources_error_hook();
     }
 
+    log_rx_message_buffer_handle = xMessageBufferCreateStatic(sizeof(log_rx_message_queue_buffer),
+                                                              log_rx_message_queue_buffer,
+                                                              &log_rx_message_struct);
+    if (NULL == log_rx_message_buffer_handle) {
+        os_resources_error_hook();
+    }
+
     uart_mutex = xSemaphoreCreateMutexStatic(&uart_mutex_buffer);
     if (NULL == uart_mutex) {
         os_resources_error_hook();
