@@ -25,6 +25,7 @@
 #include "os_resources.h"
 #include "pid_control.h"
 #include "message_buffer.h"
+#include "bsp.h"
 
 extern UART_HandleTypeDef huart1;
 
@@ -47,7 +48,12 @@ void COMMAND_Thread(void const *argument)
     command_init();
 
     if (1u == command_handle.is_initialized) {
-        printf("command init success\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            sprintf(uart_tx_buffer, "command init success\n");
+            LOG_Transmit_Blocking();
+            xSemaphoreGive(uart_mutex);
+        }
         while (1) {
             if (0 != xMessageBufferReceive(command_rx_message_buffer_handle,
                                            &received_command,
@@ -58,7 +64,12 @@ void COMMAND_Thread(void const *argument)
             osDelay(50);
         }
     } else {
-        printf("command init fail\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            sprintf(uart_tx_buffer, "command init fail\n");
+            LOG_Transmit_Blocking();
+            xSemaphoreGive(uart_mutex);
+        }
         while (1) {
             osDelay(1000);
         }

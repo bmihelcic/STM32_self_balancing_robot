@@ -28,6 +28,8 @@
 #include "printf.h"
 #include "imu.h"
 #include "app_cfg.h"
+#include "os_resources.h"
+
 
 extern UART_HandleTypeDef huart1;
 extern osMutexId uart_mutex_id;
@@ -48,26 +50,46 @@ void LOG_Thread(void const *argument)
     log_init();
 
     if (1u == log_handle.is_initialized) {
-//        printf("log init success\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            sprintf(uart_tx_buffer, "log init success\n");
+            LOG_Transmit_Blocking();
+            xSemaphoreGive(uart_mutex);
+        }
+
         os_delay_prev_wake_time = osKernelSysTick();
         while (1) {
 //            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
 //            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
 //            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
-
-//            printf("ga=%.2f aa=%.2f %d\n",
-//                   log_handle.tx_message.gyro_angle,
-//                   log_handle.tx_message.accel_angle,
-//                   log_handle.tx_message.angle_critical);
+            if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                         portMAX_DELAY)) {
+//                printf("ga=%.2f aa=%.2f %d\n",
+//                       log_handle.tx_message.gyro_angle,
+//                       log_handle.tx_message.accel_angle,
+//                       log_handle.tx_message.angle_critical);
+//                printf("Hello %.2f\r\n",24.5f);
+                xSemaphoreGive(uart_mutex);
+            }
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_LOG_FREQ_MS);
         }
     } else {
-        printf("log init fail\n");
-        while (1){
+        sprintf(uart_tx_buffer, "log init fail\n");
+        LOG_Transmit_Blocking();
+        while (1) {
             osDelay(1000);
         }
     }
+}
+
+
+void LOG_Transmit_Blocking()
+{
+    HAL_UART_Transmit(&huart1,
+                      (uint8_t*) uart_tx_buffer,
+                      strlen(uart_tx_buffer),
+                      100);
 }
 
 static void log_init()
@@ -82,12 +104,4 @@ static void log_init()
     }
 }
 
-/* Low level function for printing a char. Needed for printf() */
-void _putchar(char character)
-{
-    HAL_UART_Transmit(&huart1,
-                      (uint8_t*) &character,
-                      sizeof(character),
-                      100);
-}
 

@@ -24,6 +24,7 @@ MessageBufferHandle_t master_rx_message_buffer_handle;
 MessageBufferHandle_t command_rx_message_buffer_handle;
 MessageBufferHandle_t pid_rx_message_buffer_handle;
 MessageBufferHandle_t log_rx_message_buffer_handle;
+SemaphoreHandle_t uart_mutex;
 
 static uint8_t master_rx_message_queue_buffer[50];
 static uint8_t command_rx_message_queue_buffer[50];
@@ -34,6 +35,9 @@ static StaticMessageBuffer_t master_rx_message_struct;
 static StaticMessageBuffer_t command_rx_message_struct;
 static StaticMessageBuffer_t pid_rx_message_struct;
 static StaticMessageBuffer_t log_rx_message_struct;
+
+StaticSemaphore_t uart_mutex_buffer;
+uint8_t uart_tx_buffer[100];
 
 static void os_resources_error_hook();
 
@@ -58,6 +62,11 @@ int OS_RESOURCES_Init()
                                                               pid_rx_message_queue_buffer,
                                                               &pid_rx_message_struct);
     if (NULL == pid_rx_message_buffer_handle) {
+        os_resources_error_hook();
+    }
+
+    uart_mutex = xSemaphoreCreateMutexStatic(&uart_mutex_buffer);
+    if (NULL == uart_mutex) {
         os_resources_error_hook();
     }
 

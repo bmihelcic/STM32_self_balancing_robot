@@ -40,6 +40,7 @@ app/src/freertos.c \
 app/src/main.c \
 app/src/master.c \
 app/src/log.c \
+app/src/led.c \
 app/src/command.c \
 app/src/os_resources.c \
 bsp/src/bsp.c \

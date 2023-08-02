@@ -18,11 +18,18 @@
 #define APP_INC_OS_RESOURCES_H_
 
 #include "cmsis_os.h"
+#include "stm32f1xx_hal.h"
 
 extern QueueHandle_t master_rx_message_buffer_handle;
 extern QueueHandle_t command_rx_message_buffer_handle;
 extern QueueHandle_t pid_rx_message_buffer_handle;
 extern QueueHandle_t log_rx_message_buffer_handle;
+extern SemaphoreHandle_t uart_mutex;
+extern uint8_t uart_tx_buffer[100];
+
+extern I2C_HandleTypeDef hi2c1;
+extern TIM_HandleTypeDef htim3;
+extern UART_HandleTypeDef huart1;
 
 int OS_RESOURCES_Init();
 

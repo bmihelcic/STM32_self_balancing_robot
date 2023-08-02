@@ -19,6 +19,7 @@
 #include "os_resources.h"
 #include "app_cfg.h"
 #include "message_buffer.h"
+#include "stdio.h"
 
 static master_handle_s master_handle;
 
@@ -39,6 +40,13 @@ void MASTER_Thread(void const *argument)
 
     if (1u == master_handle.is_initialized) {
 
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            sprintf(uart_tx_buffer, "master init success\n");
+            LOG_Transmit_Blocking();
+            xSemaphoreGive(uart_mutex);
+        }
+
         os_delay_prev_wake_time = osKernelSysTick();
 
         while (1) {
@@ -53,6 +61,12 @@ void MASTER_Thread(void const *argument)
                          CFG_MASTER_FREQ_MS);
         }
     } else {
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            sprintf(uart_tx_buffer, "master init fail\n");
+            LOG_Transmit_Blocking();
+            xSemaphoreGive(uart_mutex);
+        }
         while (1) {
             osDelay(100);
         }

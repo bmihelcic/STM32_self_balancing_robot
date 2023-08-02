@@ -39,14 +39,24 @@ void IMU_Thread(void const *argument)
     os_delay_prev_wake_time = osKernelSysTick();
 
     if (1u == imu_handle.is_initialized) {
-        printf("imu init success\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            printf("imu init success\n");
+            xSemaphoreGive(uart_mutex);
+        }
+
         while (1) {
             imu_proccess_sensor_data();
-            osDelayUntil(&os_delay_prev_wake_time, CFG_IMU_FREQ_MS);
+            osDelayUntil(&os_delay_prev_wake_time,
+                         CFG_IMU_FREQ_MS);
         }
     } else {
-        printf("imu init fail\n");
-        while (1){
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            printf("imu init fail\n");
+            xSemaphoreGive(uart_mutex);
+        }
+        while (1) {
             osDelay(1000);
         }
     }
@@ -97,8 +107,7 @@ void imu_proccess_sensor_data()
     imu_handle.accel_angle = (atan2((double) accel_x,
                                     -(double) accel_z) * (180.0f / M_PI));
 
-    if ((1 == imu_handle.is_angle_critical) && (imu_handle.accel_angle > 70.0f)
-            && (imu_handle.accel_angle < 120.0f)) {
+    if ((1 == imu_handle.is_angle_critical) && (imu_handle.accel_angle > 70.0f) && (imu_handle.accel_angle < 120.0f)) {
         imu_handle.is_angle_critical = 0;
         imu_handle.gyro_angle = imu_handle.accel_angle;
     }
@@ -106,8 +115,7 @@ void imu_proccess_sensor_data()
     imu_handle.gyro_angle += ((float) gyro_y / imu_handle.gyro_val_change_factor);
     imu_handle.robot_angle = imu_handle.gyro_angle * 0.996f + imu_handle.accel_angle * 0.004f;
 
-    if ((imu_handle.robot_angle < CFG_IMU_MIN_ANGLE)
-            || (imu_handle.robot_angle > CFG_IMU_MAX_ANGLE)) {
+    if ((imu_handle.robot_angle < CFG_IMU_MIN_ANGLE) || (imu_handle.robot_angle > CFG_IMU_MAX_ANGLE)) {
         imu_handle.is_angle_critical = 1;
     } else {
         imu_handle.is_angle_critical = 0;

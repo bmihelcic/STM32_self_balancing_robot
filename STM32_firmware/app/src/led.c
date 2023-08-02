@@ -26,7 +26,7 @@ void LED_Thread(void const *argument)
 {
     for (;;)
     {
-//        HAL_GPIO_TogglePin(BLUEPILL_LED_Port, BLUEPILL_LED_Pin);
+        HAL_GPIO_TogglePin(BLUEPILL_LED_Port, BLUEPILL_LED_Pin);
         osDelay(500);
     }
 }

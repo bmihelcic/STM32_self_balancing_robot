@@ -50,17 +50,17 @@ osThreadId master_thread_id;
 uint32_t master_thread_buffer[128];
 osStaticThreadDef_t master_thread_control_block;
 
-//osThreadStaticDef(LED, LED_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
-//        led_thread_buffer, &led_thread_control_block);
-osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 0, configMINIMAL_STACK_SIZE,
+osThreadStaticDef(LED, LED_Thread, osPriorityLow, 1, configMINIMAL_STACK_SIZE,
+        led_thread_buffer, &led_thread_control_block);
+osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 1, configMINIMAL_STACK_SIZE,
         log_thread_buffer, &log_thread_control_block);
-//osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+//osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
 //        imu_thread_buffer, &imu_thread_control_block);
-//osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+//osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
 //        pid_thread_buffer, &pid_thread_control_block);
-osThreadStaticDef(COMMAND, COMMAND_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+osThreadStaticDef(COMMAND, COMMAND_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
         command_thread_buffer, &command_thread_control_block);
-osThreadStaticDef(MASTER, MASTER_Thread, osPriorityAboveNormal, 0, configMINIMAL_STACK_SIZE,
+osThreadStaticDef(MASTER, MASTER_Thread, osPriorityNormal, 1, configMINIMAL_STACK_SIZE,
         master_thread_buffer, &master_thread_control_block);
 
 
@@ -75,7 +75,7 @@ int main(void)
     /* Initialize application queues, mutexes, semaphores, ... */
     OS_RESOURCES_Init();
 
-//    led_thread_id = osThreadCreate(osThread(LED), NULL);
+    led_thread_id = osThreadCreate(osThread(LED), NULL);
     log_thread_id = osThreadCreate(osThread(LOG), NULL);
 //    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
 //    pid_thread_id = osThreadCreate(osThread(PID), NULL);
