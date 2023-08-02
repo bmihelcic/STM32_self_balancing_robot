@@ -45,6 +45,7 @@ static void log_init();
 void LOG_Thread(void const *argument)
 {
     uint32_t os_delay_prev_wake_time;
+    char tx_buff[50];
 
     log_init();
 
@@ -57,16 +58,17 @@ void LOG_Thread(void const *argument)
 
         os_delay_prev_wake_time = osKernelSysTick();
         while (1) {
-//            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
-//            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
-//            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
+            log_handle.tx_message.gyro_angle = IMU_Get_Gyro_Angle();
+            log_handle.tx_message.accel_angle = IMU_Get_Accel_Angle();
+            log_handle.tx_message.angle_critical = IMU_Is_Angle_Critical();
             if (pdTRUE == xSemaphoreTake(uart_mutex,
                                          portMAX_DELAY)) {
-//                printf("ga=%.2f aa=%.2f %d\n",
-//                       log_handle.tx_message.gyro_angle,
-//                       log_handle.tx_message.accel_angle,
-//                       log_handle.tx_message.angle_critical);
-//                printf("Hello %.2f\r\n",24.5f);
+                sprintf(tx_buff,
+                        "ga=%.2f aa=%.2f %d\n",
+                        log_handle.tx_message.gyro_angle,
+                        log_handle.tx_message.accel_angle,
+                        log_handle.tx_message.angle_critical);
+                LOG_Transmit_Blocking(tx_buff);
                 xSemaphoreGive(uart_mutex);
             }
             osDelayUntil(&os_delay_prev_wake_time,
