@@ -41,8 +41,10 @@ app/src/main.c \
 app/src/master.c \
 app/src/log.c \
 app/src/led.c \
+app/src/imu.c \
 app/src/command.c \
 app/src/os_resources.c \
+app/src/pid_control.c \
 bsp/src/bsp.c \
 bsp/src/motor_control.c \
 bsp/src/stm32f1xx_hal_timebase.c \

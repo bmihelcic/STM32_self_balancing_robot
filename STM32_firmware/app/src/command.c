@@ -26,6 +26,7 @@
 #include "pid_control.h"
 #include "message_buffer.h"
 #include "bsp.h"
+#include "log.h"
 
 extern UART_HandleTypeDef huart1;
 
@@ -50,8 +51,7 @@ void COMMAND_Thread(void const *argument)
     if (1u == command_handle.is_initialized) {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            sprintf(uart_tx_buffer, "command init success\n");
-            LOG_Transmit_Blocking();
+            LOG_Transmit_Blocking("command init success\n");
             xSemaphoreGive(uart_mutex);
         }
         while (1) {
@@ -66,8 +66,7 @@ void COMMAND_Thread(void const *argument)
     } else {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            sprintf(uart_tx_buffer, "command init fail\n");
-            LOG_Transmit_Blocking();
+            LOG_Transmit_Blocking("command init fail\n");
             xSemaphoreGive(uart_mutex);
         }
         while (1) {

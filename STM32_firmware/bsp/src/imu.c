@@ -22,6 +22,7 @@
 #include "bsp_cfg.h"
 #include "mpu6050.h"
 #include <math.h>
+#include "os_resources.h"
 
 extern I2C_HandleTypeDef hi2c1;
 static imu_handle_S imu_handle;
@@ -41,7 +42,7 @@ void IMU_Thread(void const *argument)
     if (1u == imu_handle.is_initialized) {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            printf("imu init success\n");
+            LOG_Transmit_Blocking("imu init success\n");
             xSemaphoreGive(uart_mutex);
         }
 
@@ -53,7 +54,7 @@ void IMU_Thread(void const *argument)
     } else {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            printf("imu init fail\n");
+            LOG_Transmit_Blocking("imu init fail\n");
             xSemaphoreGive(uart_mutex);
         }
         while (1) {

@@ -20,6 +20,7 @@
 #include "app_cfg.h"
 #include "message_buffer.h"
 #include "stdio.h"
+#include "log.h"
 
 static master_handle_s master_handle;
 
@@ -42,8 +43,7 @@ void MASTER_Thread(void const *argument)
 
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            sprintf(uart_tx_buffer, "master init success\n");
-            LOG_Transmit_Blocking();
+            LOG_Transmit_Blocking("master init success\n");
             xSemaphoreGive(uart_mutex);
         }
 
@@ -63,8 +63,7 @@ void MASTER_Thread(void const *argument)
     } else {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            sprintf(uart_tx_buffer, "master init fail\n");
-            LOG_Transmit_Blocking();
+            LOG_Transmit_Blocking("master init fail\n");
             xSemaphoreGive(uart_mutex);
         }
         while (1) {

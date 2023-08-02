@@ -16,8 +16,10 @@
  ******************************************************************************/
 #include "cmsis_os.h"
 #include "pid_control.h"
-#include "printf.h"
 #include "app_cfg.h"
+#include "os_resources.h"
+#include "message_buffer.h"
+#include "log.h"
 
 #define PID_ZERO  (0)
 
@@ -25,7 +27,8 @@ static pid_handle_S pid_handle;
 
 void pid_init();
 void pid_control_process(float set_point, float process_variable);
-void pid_control_message_listener();
+void pid_control_rx_message_listener();
+static void pid_parse_rx_message(pid_rx_message_t *msg);
 
 /**
  * @brief Function implementing the pid control thread.
@@ -39,17 +42,28 @@ void PID_CONTROL_Thread(void const *argument)
     pid_init();
 
     if (1u == pid_handle.is_initialized) {
+
         os_delay_prev_wake_time = osKernelSysTick();
-        printf("pid control init success\n");
+
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            LOG_Transmit_Blocking("pid control init success\n");
+            xSemaphoreGive(uart_mutex);
+        }
+
         while (1) {
-            pid_control_message_listener();
+            pid_control_rx_message_listener();
             pid_control_process(pid_handle.set_point,
                                 pid_handle.process_variable);
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_PID_CONTROL_FREQ_MS);
         }
     } else {
-        printf("pid control init fail\n");
+        if (pdTRUE == xSemaphoreTake(uart_mutex,
+                                     portMAX_DELAY)) {
+            LOG_Transmit_Blocking("pid control init fail\n");
+            xSemaphoreGive(uart_mutex);
+        }
         while (1);
     }
 }
@@ -107,17 +121,36 @@ void pid_control_process(float set_point, float process_variable)
     pid_handle.time_stamp_prev = pid_handle.time_stamp;
 }
 
-void pid_control_message_listener()
+void pid_control_rx_message_listener()
 {
-    osEvent pid_message_queue_event;
-    pid_rx_message_t *pid_message_ptr;
+    pid_rx_message_t rx_message;
 
-    pid_message_queue_event = osMessageGet(pid_rx_message_buffer_handle,
-                                           0);
-    if (osEventMessage == pid_message_queue_event.status) {
-        pid_message_ptr = (pid_message_t*) pid_rx_message_queue_event.value.p;
-        pid_handle.set_point = pid_message_ptr->rx_set_point;
-        pid_handle.process_variable = pid_message_ptr->rx_current_point;
+    if (0 != xMessageBufferReceive(pid_rx_message_buffer_handle,
+                                   &rx_message,
+                                   sizeof(rx_message),
+                                   0)) {
+        pid_parse_rx_message(&rx_message);
+    }
+}
+
+static void pid_parse_rx_message(pid_rx_message_t *msg)
+{
+    switch (msg->id)
+    {
+        case COMMAND_ID:
+            switch (msg->data.command)
+            {
+            }
+
+            break;
+        case IMU_ID:
+            pid_handle.process_variable = msg->data.imu_robot_angle;
+            break;
+        case MASTER_ID:
+            pid_handle.set_point = msg->data.master_angle_set_point;
+            break;
+        default:
+            break;
     }
 }
 

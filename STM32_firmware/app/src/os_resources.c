@@ -19,6 +19,7 @@
 #include "log.h"
 #include "pid_control.h"
 #include "message_buffer.h"
+#include "app_cfg.h"
 
 MessageBufferHandle_t master_rx_message_buffer_handle;
 MessageBufferHandle_t command_rx_message_buffer_handle;
@@ -37,7 +38,7 @@ static StaticMessageBuffer_t pid_rx_message_struct;
 static StaticMessageBuffer_t log_rx_message_struct;
 
 StaticSemaphore_t uart_mutex_buffer;
-uint8_t uart_tx_buffer[100];
+char uart_tx_buffer[CFG_UART_TX_BUFFER_SIZE];
 
 static void os_resources_error_hook();
 

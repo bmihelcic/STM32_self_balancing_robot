@@ -54,10 +54,10 @@ osThreadStaticDef(LED, LED_Thread, osPriorityLow, 1, configMINIMAL_STACK_SIZE,
         led_thread_buffer, &led_thread_control_block);
 osThreadStaticDef(LOG, LOG_Thread, osPriorityLow, 1, configMINIMAL_STACK_SIZE,
         log_thread_buffer, &log_thread_control_block);
-//osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
-//        imu_thread_buffer, &imu_thread_control_block);
-//osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
-//        pid_thread_buffer, &pid_thread_control_block);
+osThreadStaticDef(IMU, IMU_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
+        imu_thread_buffer, &imu_thread_control_block);
+osThreadStaticDef(PID, PID_CONTROL_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
+        pid_thread_buffer, &pid_thread_control_block);
 osThreadStaticDef(COMMAND, COMMAND_Thread, osPriorityAboveNormal, 1, configMINIMAL_STACK_SIZE,
         command_thread_buffer, &command_thread_control_block);
 osThreadStaticDef(MASTER, MASTER_Thread, osPriorityNormal, 1, configMINIMAL_STACK_SIZE,
@@ -77,8 +77,8 @@ int main(void)
 
     led_thread_id = osThreadCreate(osThread(LED), NULL);
     log_thread_id = osThreadCreate(osThread(LOG), NULL);
-//    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
-//    pid_thread_id = osThreadCreate(osThread(PID), NULL);
+    imu_thread_id = osThreadCreate(osThread(IMU), NULL);
+    pid_thread_id = osThreadCreate(osThread(PID), NULL);
     command_thread_id = osThreadCreate(osThread(COMMAND), NULL);
     master_thread_id = osThreadCreate(osThread(MASTER), NULL);
 

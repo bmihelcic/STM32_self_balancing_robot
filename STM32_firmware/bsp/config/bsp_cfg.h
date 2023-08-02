@@ -38,6 +38,7 @@
 
 /* IMU configuration */
 #define CFG_IMU_FREQ_MS          (5)         // Run IMU module every 5ms
+#define CFG_IMU_FREQ_HZ          (1000/CFG_IMU_FREQ_MS)
 #define CFG_IMU_MAX_ANGLE        (125.0f)
 #define CFG_IMU_MIN_ANGLE        (65.0f)
 

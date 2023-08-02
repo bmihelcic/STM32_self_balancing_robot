@@ -30,7 +30,6 @@
 #include "app_cfg.h"
 #include "os_resources.h"
 
-
 extern UART_HandleTypeDef huart1;
 extern osMutexId uart_mutex_id;
 
@@ -52,8 +51,7 @@ void LOG_Thread(void const *argument)
     if (1u == log_handle.is_initialized) {
         if (pdTRUE == xSemaphoreTake(uart_mutex,
                                      portMAX_DELAY)) {
-            sprintf(uart_tx_buffer, "log init success\n");
-            LOG_Transmit_Blocking();
+            LOG_Transmit_Blocking("log init success\n");
             xSemaphoreGive(uart_mutex);
         }
 
@@ -75,21 +73,27 @@ void LOG_Thread(void const *argument)
                          CFG_LOG_FREQ_MS);
         }
     } else {
-        sprintf(uart_tx_buffer, "log init fail\n");
-        LOG_Transmit_Blocking();
+        LOG_Transmit_Blocking("log init fail\n");
         while (1) {
             osDelay(1000);
         }
     }
 }
 
-
-void LOG_Transmit_Blocking()
+void LOG_Transmit_Blocking(const char *log_string)
 {
-    HAL_UART_Transmit(&huart1,
-                      (uint8_t*) uart_tx_buffer,
-                      strlen(uart_tx_buffer),
-                      100);
+    uint16_t log_string_size;
+
+    log_string_size = strlen(log_string);
+    if (log_string_size <= CFG_UART_TX_BUFFER_SIZE) {
+        sprintf(uart_tx_buffer,
+                log_string);
+        HAL_UART_Transmit(&huart1,
+                          (uint8_t*) uart_tx_buffer,
+                          log_string_size,
+                          100);
+    }
+
 }
 
 static void log_init()
@@ -103,5 +107,4 @@ static void log_init()
         log_handle.is_initialized = 0u;
     }
 }
-
 

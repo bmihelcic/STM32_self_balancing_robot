@@ -36,4 +36,6 @@ typedef struct sbr_log_handle_STRUCT {
     uint8_t is_initialized;
 } log_handle_S;
 
+void LOG_Transmit_Blocking(const char *log_string);
+
 #endif /* APP_INC_LOG_H_ */

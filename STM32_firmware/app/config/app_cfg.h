@@ -46,6 +46,8 @@
 #define CFG_PID_KD_HIGH_LIMIT               (1023.0f)
 #define CFG_PID_KD_LOW_LIMIT                (-1023.0f)
 
+#define CFG_UART_TX_BUFFER_SIZE             (100)       // Size in bytes of uart tx buffer
+
 typedef enum
 {
     MASTER_ID = 0u,
