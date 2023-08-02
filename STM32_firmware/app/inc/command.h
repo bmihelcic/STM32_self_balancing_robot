@@ -31,6 +31,5 @@ typedef struct
 
 
 void COMMAND_Thread(void const *argument);
-void COMMAND_Rx_Callback(UART_HandleTypeDef *huart);
 
 #endif /* APP_INC_COMMAND_H_ */

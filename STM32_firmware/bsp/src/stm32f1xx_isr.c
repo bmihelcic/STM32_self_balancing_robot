@@ -105,7 +105,6 @@ void TIM1_UP_IRQHandler(void)
  */
 void USART1_IRQHandler(void)
 {
-    COMMAND_Rx_Callback(&huart1);
     HAL_UART_IRQHandler(&huart1);
 }
 

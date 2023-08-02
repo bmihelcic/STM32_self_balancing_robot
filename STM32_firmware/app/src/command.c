@@ -29,9 +29,11 @@
 extern UART_HandleTypeDef huart1;
 
 command_handle_S command_handle;
+static uint8_t uart_rx_byte; // registered in uart driver for byte reception, do not write to it from application!
 
 static void command_init();
 static void command_handler(uint8_t rx_command);
+void command_rx_callback(UART_HandleTypeDef *huart);
 
 /**
  * @brief Function implementing the command thread.
@@ -63,20 +65,37 @@ void COMMAND_Thread(void const *argument)
     }
 }
 
-void COMMAND_Rx_Callback(UART_HandleTypeDef *huart)
+void command_rx_callback(UART_HandleTypeDef *huart)
 {
-    uint8_t received_command = COMMAND_DO_NOTHING;
-    received_command = (huart->Instance->DR & 0xFF);
     xMessageBufferSendFromISR(command_rx_message_buffer_handle,
-                              &received_command,
-                              sizeof(received_command),
+                              &uart_rx_byte,
+                              sizeof(uart_rx_byte),
                               NULL);
+    HAL_UART_Receive_IT(&huart1,
+                        &uart_rx_byte,
+                        sizeof(uart_rx_byte));
 
 }
 
 static void command_init()
 {
+    if (HAL_OK != HAL_UART_Receive_IT(&huart1,
+                                      &uart_rx_byte,
+                                      sizeof(uart_rx_byte))) {
+        goto exitErr;
+    }
+
+    if (HAL_OK != HAL_UART_RegisterCallback(&huart1,
+                                            HAL_UART_RX_COMPLETE_CB_ID,
+                                            command_rx_callback)) {
+        goto exitErr;
+    }
+
     command_handle.is_initialized = 1u;
+    return;
+
+exitErr:
+    command_handle.is_initialized = 0u;
     return;
 }
 
