@@ -25,14 +25,17 @@ void LOG_Thread(void const *argument);
 
 typedef struct
 {
+    float imu_robot_angle;
     float pid_total;
     float pid_error;
-    float imu_robot_angle;
+    float pid_Kp;
+    float pid_Ki;
+    float pid_Kd;
 } log_tx_message_t;
 
 typedef struct
 {
-    module_id_t id;
+    message_id_t id;
     union
     {
         uint8_t command;
@@ -41,6 +44,12 @@ typedef struct
             float pid_total;
             float pid_error;
         } pid;
+        struct
+        {
+            float pid_Kp;
+            float pid_Ki;
+            float pid_Kd;
+        } pid_slow;
         struct
         {
             float imu_robot_angle;

@@ -19,15 +19,17 @@
 #include "os_resources.h"
 #include "app_cfg.h"
 #include "message_buffer.h"
-#include "stdio.h"
 #include "log.h"
 #include "pid_control.h"
+#include "motor_control.h"
 
 static master_handle_s master_handle;
 
 static void master_init();
 static void master_parse_rx_message(master_rx_message_t *msg);
 static void master_send_set_point_to_pid();
+static void master_drive_motors();
+static void master_power_off_motors();
 
 /**
  * @brief Function implementing the master thread.
@@ -59,6 +61,12 @@ void MASTER_Thread(void const *argument)
                 master_parse_rx_message(&rx_message);
             }
 
+            if (1 == master_handle.master_start_stop) {
+                master_drive_motors();
+            } else {
+                master_power_off_motors();
+            }
+
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_MASTER_FREQ_MS);
         }
@@ -77,6 +85,7 @@ void MASTER_Thread(void const *argument)
 static void master_init()
 {
     master_handle.robot_angle_set_point = CFG_INITIAL_UPRIGHT_ROBOT_ANGLE;
+    master_handle.master_start_stop = 0;
     master_handle.is_initialized = 1u;
 }
 
@@ -104,6 +113,7 @@ static void master_parse_rx_message(master_rx_message_t *msg)
 
             break;
         case PID_ID:
+            master_handle.pid_total_value = msg->data.pid_total;
             break;
         default:
             break;
@@ -125,4 +135,19 @@ static void master_send_set_point_to_pid()
                            10);
         xSemaphoreGive(pid_message_buffer_mutex);
     }
+}
+
+static void master_drive_motors()
+{
+    if (master_handle.pid_total_value > 0) {
+        MOTORS_Turn_Counter_Clockwise((uint16_t) master_handle.pid_total_value);
+    } else {
+        MOTORS_Turn_Clockwise((uint16_t) (-master_handle.pid_total_value));
+    }
+
+}
+
+static void master_power_off_motors()
+{
+    MOTORS_Power_Off();
 }

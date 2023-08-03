@@ -20,6 +20,7 @@
 #include "os_resources.h"
 #include "message_buffer.h"
 #include "log.h"
+#include "master.h"
 
 #define PID_ZERO  (0)
 
@@ -30,6 +31,7 @@ static void pid_control_loop();
 static void pid_rx_message_listener();
 static void pid_parse_rx_message(pid_rx_message_t *msg);
 static void pid_update_log_message();
+static void pid_send_pid_total_to_master();
 
 /**
  * @brief Function implementing the pid control thread.
@@ -55,6 +57,7 @@ void PID_CONTROL_Thread(void const *argument)
         while (1) {
             pid_rx_message_listener();
             pid_control_loop();
+            pid_send_pid_total_to_master();
             pid_update_log_message();
             osDelayUntil(&os_delay_prev_wake_time,
                          CFG_PID_CONTROL_FREQ_MS);
@@ -115,10 +118,6 @@ static void pid_control_loop()
     /* calculate pid_total (sum of p,i and d) */
     pid_handle.pid_total = pid_handle.pid_p + pid_handle.pid_i + pid_handle.pid_d;
 
-    if (pid_handle.pid_total < PID_ZERO) {
-        pid_handle.pid_total = -(pid_handle.pid_total);
-    }
-
     pid_handle.pid_error_prev = pid_handle.pid_error;
     pid_handle.time_stamp_prev = pid_handle.time_stamp;
 }
@@ -138,6 +137,9 @@ static void pid_rx_message_listener()
 static void pid_update_log_message()
 {
     log_rx_message_t log_message;
+    static uint32_t loop_counter = 0;
+
+    loop_counter++;
 
     log_message.id = PID_ID;
     log_message.data.pid.pid_error = pid_handle.pid_error;
@@ -145,11 +147,35 @@ static void pid_update_log_message()
 
     if (pdTRUE == xSemaphoreTake(log_message_buffer_mutex,
                                  10)) {
+        if(loop_counter % 10 == 0) {
+            // slow message
+            log_message.id = PID_SLOW_ID;
+            log_message.data.pid_slow.pid_Kp = pid_handle.Kp;
+            log_message.data.pid_slow.pid_Ki = pid_handle.Ki;
+            log_message.data.pid_slow.pid_Kd = pid_handle.Kd;
+        }
         xMessageBufferSend(log_rx_message_buffer_handle,
                            &log_message,
                            sizeof(log_message),
                            10);
         xSemaphoreGive(log_message_buffer_mutex);
+    }
+}
+
+static void pid_send_pid_total_to_master()
+{
+    master_rx_message_t master_message;
+
+    master_message.id = PID_ID;
+    master_message.data.pid_total = pid_handle.pid_total;
+
+    if (pdTRUE == xSemaphoreTake(master_message_buffer_mutex,
+                                 10)) {
+        xMessageBufferSend(master_rx_message_buffer_handle,
+                           &master_message,
+                           sizeof(master_message),
+                           10);
+        xSemaphoreGive(master_message_buffer_mutex);
     }
 }
 
@@ -160,6 +186,44 @@ static void pid_parse_rx_message(pid_rx_message_t *msg)
         case COMMAND_ID:
             switch (msg->data.command)
             {
+                case COMMAND_PID_RAISE_P:
+                    pid_handle.Kp++;
+                    break;
+                case COMMAND_PID_RAISE_I:
+                    pid_handle.Ki += 0.1;
+                    break;
+                case COMMAND_PID_RAISE_D:
+                    pid_handle.Kd++;
+                    break;
+                case COMMAND_PID_RAISE_P10:
+                    pid_handle.Kp += 10;
+                    break;
+                case COMMAND_PID_RAISE_I1:
+                    pid_handle.Ki += 1;
+                    break;
+                case COMMAND_PID_RAISE_D10:
+                    pid_handle.Kd += 10;
+                    break;
+                case COMMAND_PID_LOWER_P:
+                    pid_handle.Kp--;
+                    break;
+                case COMMAND_PID_LOWER_I:
+                    pid_handle.Ki -= 0.1;
+                    break;
+                case COMMAND_PID_LOWER_D:
+                    pid_handle.Kd--;
+                    break;
+                case COMMAND_PID_LOWER_P10:
+                    pid_handle.Kp -= 10;
+                    break;
+                case COMMAND_PID_LOWER_I1:
+                    pid_handle.Ki -= 1;
+                    break;
+                case COMMAND_PID_LOWER_D10:
+                    pid_handle.Kd -= 10;
+                    break;
+                default:
+                    break;
             }
 
             break;

@@ -1,4 +1,4 @@
-<mxfile host="Electron" modified="2023-08-02T20:47:32.410Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.1 Chrome/112.0.5615.204 Electron/24.6.4 Safari/537.36" etag="cROFcCaykGi9jDHEgBcD" version="21.6.1" type="device">
+<mxfile host="Electron" modified="2023-08-03T09:48:30.269Z" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) draw.io/21.6.1 Chrome/112.0.5615.204 Electron/24.6.4 Safari/537.36" etag="yS7E6FgitqWm3fBNO8Ph" version="21.6.1" type="device">
   <diagram name="Page-1" id="efa7a0a1-bf9b-a30e-e6df-94a7791c09e9">
     <mxGraphModel dx="2260" dy="834" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="826" pageHeight="1169" background="none" math="0" shadow="0">
       <root>
@@ -52,7 +52,7 @@
             </Array>
           </mxGeometry>
         </mxCell>
-        <mxCell id="Dwc598zF5ru40FEaqP3a-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" edge="1" parent="1" source="zc4t8N1WEWAjIhmc4Z5t-130" target="WO7KmBGHJ9-n3TspwktH-61">
+        <mxCell id="Dwc598zF5ru40FEaqP3a-29" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0.5;exitY=0;exitDx=0;exitDy=0;entryX=0.5;entryY=1;entryDx=0;entryDy=0;" parent="1" source="zc4t8N1WEWAjIhmc4Z5t-130" target="WO7KmBGHJ9-n3TspwktH-61" edge="1">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="zc4t8N1WEWAjIhmc4Z5t-130" value="&lt;p style=&quot;margin: 0px; margin-top: 4px; text-align: center; text-decoration: underline;&quot;&gt;&lt;b&gt;COMMAND&lt;/b&gt;&lt;/p&gt;&lt;hr&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;angle_set_point_plus&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;angle_set_point_minus&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;master_start_stop&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_raise_p&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_raise_i&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_raise_d&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_lower_p&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_lower_i&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;pid_lower_d&lt;br&gt;&lt;/p&gt;&lt;p style=&quot;margin: 0px; margin-left: 8px;&quot;&gt;log_on_off&lt;/p&gt;" style="verticalAlign=top;align=left;overflow=fill;fontSize=12;fontFamily=Helvetica;html=1;strokeColor=#003366;shadow=1;fillColor=#D4E1F5;fontColor=#003366" parent="1" vertex="1">
@@ -231,6 +231,9 @@
         </mxCell>
         <mxCell id="WO7KmBGHJ9-n3TspwktH-122" value="imu_accel_angle : float" style="text;strokeColor=#36393d;fillColor=#ffcccc;align=left;verticalAlign=middle;spacingLeft=4;spacingRight=4;overflow=hidden;points=[[0,0.5],[1,0.5]];portConstraint=eastwest;rotatable=0;whiteSpace=wrap;html=1;" parent="WO7KmBGHJ9-n3TspwktH-116" vertex="1">
           <mxGeometry y="150" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="WaUAw8E1OSdGRjaz-H0r-29" value="&lt;font style=&quot;font-size: 25px;&quot;&gt;#&amp;lt;robot_angle&amp;gt;&lt;br&gt;!&amp;lt;pid_erorr&amp;gt;&lt;br&gt;*&amp;lt;pid_total&amp;gt;&lt;br&gt;&lt;/font&gt;" style="text;html=1;align=left;verticalAlign=middle;resizable=0;points=[];autosize=1;strokeColor=none;fillColor=none;spacingTop=0;spacing=2;" vertex="1" parent="1">
+          <mxGeometry x="950" y="1243" width="200" height="100" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>

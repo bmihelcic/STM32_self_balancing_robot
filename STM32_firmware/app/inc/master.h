@@ -30,7 +30,7 @@ typedef struct
 
 typedef struct
 {
-    module_id_t id;
+    message_id_t id;
     union
     {
         uint8_t command;

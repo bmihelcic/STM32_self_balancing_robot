@@ -18,7 +18,6 @@
 #include "log.h"
 #include "cmsis_os.h"
 #include "message_buffer.h"
-#include "printf.h"
 #include "bsp_cfg.h"
 #include "mpu6050.h"
 #include <math.h>
@@ -26,12 +25,12 @@
 #include "app_cfg.h"
 #include "pid_control.h"
 
-extern I2C_HandleTypeDef hi2c1;
+
 static imu_handle_S imu_handle;
 
-void imu_init();
-void imu_proccess_sensor_data();
-int imu_calc_gyro_scale_factor(float *scale_factor);
+static void imu_init();
+static void imu_proccess_sensor_data();
+static int imu_calc_gyro_scale_factor(float *scale_factor);
 static void imu_send_angle_to_pid_control();
 static void imu_update_log_message();
 
@@ -69,7 +68,7 @@ void IMU_Thread(void const *argument)
     }
 }
 
-void imu_init()
+static void imu_init()
 {
     imu_handle.is_initialized = 0u;
 
@@ -86,7 +85,7 @@ void imu_init()
     }
 }
 
-void imu_proccess_sensor_data()
+static void imu_proccess_sensor_data()
 {
     int16_t accel_x;
     int16_t accel_z;
@@ -119,7 +118,7 @@ void imu_proccess_sensor_data()
  * Check MPU6050 product specification, page 12
  * Factor is different for different reading frequency
  */
-int imu_calc_gyro_scale_factor(float *scale_factor)
+static int imu_calc_gyro_scale_factor(float *scale_factor)
 {
     int ret_val = -1;
 

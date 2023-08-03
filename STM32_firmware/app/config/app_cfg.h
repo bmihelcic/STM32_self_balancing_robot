@@ -32,10 +32,10 @@
 #define CFG_INITIAL_UPRIGHT_ROBOT_ANGLE     (84.7f)      // Robot angle at which it should stand upright
 
 /* MASTER configuration */
-#define CFG_MASTER_FREQ_MS                  (10)         // Master module run frequency in ms
+#define CFG_MASTER_FREQ_MS                  (5)         // Master module run frequency in ms
 
 /* LOG configuration*/
-#define CFG_LOG_FREQ_MS                     (1)         // Log module run frequency in ms
+#define CFG_LOG_FREQ_MS                     (2)         // Log module run frequency in ms
 
 /* PID configuration */
 #define CFG_PID_CONTROL_FREQ_MS             (5)          // Pid module run frequency in ms
@@ -53,8 +53,9 @@ typedef enum
     MASTER_ID = 0u,
     COMMAND_ID,
     PID_ID,
+    PID_SLOW_ID,
     LOG_ID,
     IMU_ID,
-} module_id_t;
+} message_id_t;
 
 #endif /* APP_CONFIG_APP_CFG_H_ */

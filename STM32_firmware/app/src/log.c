@@ -30,9 +30,6 @@
 #include "app_cfg.h"
 #include "os_resources.h"
 
-extern UART_HandleTypeDef huart1;
-extern osMutexId uart_mutex_id;
-
 static log_handle_S log_handle;
 
 static void log_init();
@@ -140,6 +137,11 @@ static void log_parse_rx_message(log_rx_message_t *msg)
             log_handle.tx_message.pid_error = msg->data.pid.pid_error;
             log_handle.tx_message.pid_total = msg->data.pid.pid_total;
             break;
+        case PID_SLOW_ID:
+            log_handle.tx_message.pid_Kp = msg->data.pid_slow.pid_Kp;
+            log_handle.tx_message.pid_Ki = msg->data.pid_slow.pid_Ki;
+            log_handle.tx_message.pid_Kd = msg->data.pid_slow.pid_Kd;
+            break;
         default:
             break;
     }
@@ -148,9 +150,19 @@ static void log_parse_rx_message(log_rx_message_t *msg)
 static void log_send_tx_message()
 {
     char tx_buff[50];
+    static uint32_t loopCounter = 0;
+
+    if(loopCounter % 10 == 0) {
+        sprintf(tx_buff,
+                "?%.2f\t&%.2f\t$%.2f\t",
+                log_handle.tx_message.pid_Kp,
+                log_handle.tx_message.pid_Ki,
+                log_handle.tx_message.pid_Kd);
+        LOG_Transmit_Blocking(tx_buff);
+    }
 
     sprintf(tx_buff,
-            "ra%.2f\t%.2f\t%.2f\t",
+            "#%.2f\t!%.2f\t*%.2f\t",
             log_handle.tx_message.imu_robot_angle,
             log_handle.tx_message.pid_error,
             log_handle.tx_message.pid_total);
